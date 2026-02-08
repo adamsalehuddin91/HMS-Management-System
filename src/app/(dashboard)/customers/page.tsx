@@ -119,7 +119,7 @@ export default function CustomersPage() {
             if (saleItems && saleItems.length > 0) {
               return {
                 ...item,
-                services: saleItems.map(si => ({
+                services: saleItems.map((si: any) => ({
                   name: si.item_name,
                   amount: si.total,
                   stylist: si.staff?.name || 'Unknown'
