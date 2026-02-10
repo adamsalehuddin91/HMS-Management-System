@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AnimationProvider } from "@/components/providers/animation-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { FontSizeManager } from "@/components/providers/font-size-manager";
 import { Toaster } from "@/components/ui/toaster";
 
 const geistSans = Geist({
@@ -29,9 +30,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased font-size-medium`}
       >
         <AuthProvider>
+          <FontSizeManager />
           <AnimationProvider>
             {children}
             <Toaster />

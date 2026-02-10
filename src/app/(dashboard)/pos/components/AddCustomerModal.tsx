@@ -29,9 +29,9 @@ export function AddCustomerModal({
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
             >
-                <Card className="w-full max-w-md border-none shadow-2xl bg-white rounded-[32px] overflow-hidden">
-                    <CardContent className="p-0">
-                        <div className="p-8 pb-6 bg-[#2e7d32]/5 flex items-center justify-between border-b border-[#2e7d32]/10">
+                <Card className="w-full max-w-md border-none shadow-2xl bg-white rounded-[32px] overflow-hidden max-h-[96vh] flex flex-col">
+                    <CardContent className="p-0 flex flex-col overflow-hidden">
+                        <div className="p-6 md:p-8 pb-4 md:pb-6 bg-[#2e7d32]/5 flex items-center justify-between border-b border-[#2e7d32]/10 shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 rounded-2xl bg-[#2e7d32] flex items-center justify-center">
                                     <UserPlus className="h-5 w-5 text-white" />
@@ -53,14 +53,14 @@ export function AddCustomerModal({
                             </button>
                         </div>
 
-                        <div className="p-8 space-y-6">
+                        <div className="p-6 md:p-8 space-y-6 overflow-y-auto custom-scrollbar flex-1">
                             <div className="space-y-4">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Full Name</label>
                                     <div className="relative group">
                                         <Input
                                             placeholder="e.g. John Doe"
-                                            className="h-12 pl-12 bg-gray-50 border-none rounded-2xl focus-visible:ring-1 focus-visible:ring-[#2e7d32]/20 transition-all"
+                                            className="h-11 md:h-12 pl-12 bg-gray-50 border-none rounded-2xl focus-visible:ring-1 focus-visible:ring-[#2e7d32]/20 transition-all font-bold"
                                             value={newCustomerName}
                                             onChange={(e) => setNewCustomerName(e.target.value)}
                                         />
@@ -73,7 +73,7 @@ export function AddCustomerModal({
                                     <div className="relative group">
                                         <Input
                                             placeholder="e.g. +60123456789"
-                                            className="h-12 pl-12 bg-gray-50 border-none rounded-2xl focus-visible:ring-1 focus-visible:ring-[#2e7d32]/20 transition-all font-mono"
+                                            className="h-11 md:h-12 pl-12 bg-gray-50 border-none rounded-2xl focus-visible:ring-1 focus-visible:ring-[#2e7d32]/20 transition-all font-mono font-bold"
                                             value={newCustomerPhone}
                                             onChange={(e) => setNewCustomerPhone(e.target.value)}
                                         />
@@ -82,10 +82,10 @@ export function AddCustomerModal({
                                 </div>
                             </div>
 
-                            <div className="flex gap-4 mt-8">
+                            <div className="flex gap-4 pt-4 pb-2">
                                 <Button
                                     variant="outline"
-                                    className="flex-1 h-12 rounded-2xl border-none bg-gray-100 text-gray-400 font-bold hover:bg-gray-200 transition-all"
+                                    className="flex-1 h-11 md:h-12 rounded-2xl border-none bg-gray-100 text-gray-400 font-bold hover:bg-gray-200 transition-all"
                                     onClick={() => {
                                         setShowAddCustomerModal(false);
                                         setNewCustomerName("");
@@ -95,7 +95,7 @@ export function AddCustomerModal({
                                     Discard
                                 </Button>
                                 <Button
-                                    className="flex-1 h-12 rounded-2xl bg-[#2e7d32] hover:bg-[#1b5e20] shadow-lg shadow-[#2e7d32]/20 font-black tracking-wide transition-all"
+                                    className="flex-1 h-11 md:h-12 rounded-2xl bg-[#2e7d32] hover:bg-[#1b5e20] shadow-lg shadow-[#2e7d32]/20 font-black tracking-wide transition-all"
                                     onClick={handleAddCustomer}
                                     disabled={savingCustomer || !newCustomerName.trim() || !newCustomerPhone.trim()}
                                 >

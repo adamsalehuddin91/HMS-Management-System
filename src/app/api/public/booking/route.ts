@@ -1,5 +1,6 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { NotificationService } from "@/lib/services/notification-service";
+import { createClient } from "@supabase/supabase-js";
 
 // Use service role for public bookings (bypasses RLS)
 const supabaseAdmin = createClient(
@@ -87,6 +88,30 @@ export async function POST(request: NextRequest) {
         { error: `Failed to create booking: ${bookingError.message}` },
         { status: 500 }
       );
+    }
+
+    // Send WhatsApp/SMS Confirmation (Optional/Background)
+    try {
+      const { data: serviceData } = await supabaseAdmin
+        .from("services")
+        .select("name")
+        .eq("id", serviceId)
+        .single();
+
+      if (serviceData) {
+        const notificationResult = await NotificationService.sendConfirmation({
+          customerName,
+          customerPhone,
+          serviceName: serviceData.name,
+          date: bookingDate,
+          time: startTime,
+          bookingId: booking.id
+        });
+        console.log("[Booking] Notification result:", notificationResult);
+      }
+    } catch (notificationError) {
+      console.error("Notification failed:", notificationError);
+      // Don't fail the booking if notification fails
     }
 
     return NextResponse.json({

@@ -121,15 +121,25 @@ export default function ReportsPage() {
   }, [selectedMonth]);
 
   const handleVoidTransaction = async () => {
-    if (!selectedTransaction) return;
+    if (!selectedTransaction || !user) return;
     setVoidingTransaction(true);
-    const supabase = createClient();
     try {
-      const { error } = await supabase.from('sales').update({ status: 'voided', voided_at: new Date().toISOString(), voided_by: user?.id, void_reason: voidReason }).eq('id', selectedTransaction.fullId);
-      if (error) throw error;
+      const { posService } = await import("@/lib/services/pos-service");
+      await posService.voidSale({
+        saleId: selectedTransaction.fullId,
+        voidedBy: user.id,
+        voidReason: voidReason
+      });
+
       setRecentTransactions(prev => prev.map(txn => txn.fullId === selectedTransaction.fullId ? { ...txn, status: 'voided' } : txn));
-      setShowVoidModal(false); toast.success("Transaksi berjaya dibatalkan!");
-    } catch (error) { toast.error("Gagal batalkan transaksi."); }
+      setShowVoidModal(false);
+      toast.success("Transaksi berjaya dibatalkan!");
+    } catch (error: any) {
+      console.error("Void transaction full error object:", JSON.stringify(error, null, 2));
+      console.error("Void transaction error details:", error);
+      const errorMsg = error.message || error.details || "Gagal batalkan transaksi.";
+      toast.error(`Ralat: ${errorMsg}`);
+    }
     finally { setVoidingTransaction(false); }
   };
 

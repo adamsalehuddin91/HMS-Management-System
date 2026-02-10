@@ -219,7 +219,7 @@ export default function AppointmentsPage() {
 
       <Link href="/appointments/new">
         <Button
-          className="fixed bottom-8 right-8 shadow-2xl bg-[#2e7d32] hover:bg-[#1b5e20] h-16 px-8 rounded-2xl text-base font-black uppercase tracking-widest transition-all active:scale-95 group"
+          className="fixed bottom-8 left-8 md:left-72 shadow-2xl bg-[#2e7d32] hover:bg-[#1b5e20] h-16 px-8 rounded-2xl text-base font-black uppercase tracking-widest transition-all active:scale-95 group"
           size="lg"
         >
           <Plus className="h-5 w-5 mr-3 group-hover:rotate-90 transition-transform duration-300" />

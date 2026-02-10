@@ -4,3 +4,4 @@ export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 export { Badge } from "./badge";
 export { Avatar } from "./avatar";
 export { StatCard } from "./stat-card";
+export { Textarea } from "./textarea";

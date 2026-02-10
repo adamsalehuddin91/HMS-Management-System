@@ -8,6 +8,8 @@ import {
   Bell,
   Shield,
   Users,
+  Monitor,
+  Loader2,
 } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Card, CardContent } from "@/components/ui";
@@ -21,6 +23,8 @@ import { BusinessSettings } from "./components/BusinessSettings";
 import { OperatingHoursSettings } from "./components/OperatingHoursSettings";
 import { LoyaltySettingsView } from "./components/LoyaltySettingsView";
 import { RolesSettings } from "./components/RolesSettings";
+import { DisplaySettings } from "./components/DisplaySettings";
+import { SMSNotificationSettings } from "./components/SMSNotificationSettings";
 
 interface BusinessInfo { name: string; phone: string; email: string; whatsapp: string; address: string; }
 interface LoyaltySettings { pointsPerRM: number; memberMultiplier: number; pointsPerDiscount: number; maxRedemption: number; expiryMonths: number; expiryEnabled: boolean; }
@@ -85,6 +89,7 @@ export default function SettingsPage() {
     { id: "business", label: "Profil Bisnes", icon: Building2 },
     { id: "hours", label: "Waktu Operasi", icon: Clock },
     { id: "loyalty", label: "Program Kesetiaan", icon: Gift },
+    { id: "display", label: "Paparan", icon: Monitor },
     { id: "notifications", label: "Notifikasi", icon: Bell },
     { id: "roles", label: "Peranan Pengguna", icon: Users },
     { id: "security", label: "Keselamatan", icon: Shield },
@@ -116,8 +121,10 @@ export default function SettingsPage() {
                   {activeTab === "loyalty" && (
                     <LoyaltySettingsView loyaltySettings={loyaltySettings} setLoyaltySettings={setLoyaltySettings} saving={saving} showSaved={showSaved} handleSave={handleSave} />
                   )}
+                  {activeTab === "display" && <DisplaySettings />}
+                  {activeTab === "notifications" && <SMSNotificationSettings />}
                   {activeTab === "roles" && <RolesSettings />}
-                  {(activeTab === "notifications" || activeTab === "security") && (
+                  {activeTab === "security" && (
                     <div className="flex flex-col items-center justify-center h-64 text-gray-300 gap-4">
                       <div className="h-16 w-16 rounded-full bg-gray-50 flex items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-pulse" />

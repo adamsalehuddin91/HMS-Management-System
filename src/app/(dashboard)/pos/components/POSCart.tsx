@@ -21,8 +21,7 @@ interface POSCartProps {
     staff: StaffMember[];
     updateQuantity: (id: string, delta: number, itemType: 'service' | 'product') => void;
     removeFromCart: (id: string, itemType: 'service' | 'product') => void;
-    updatePrimaryStaff: (id: string, staffId: string, itemType: 'service' | 'product') => void;
-    updateSecondaryStaff: (id: string, staffId: string | null, itemType: 'service' | 'product') => void;
+    updateStaff: (id: string, staffId: string, type: 'primary' | 'secondary', itemType: 'service' | 'product') => void;
     pointsToRedeem: number;
     setPointsToRedeem: (pts: number) => void;
     maxRedeemable: number;
@@ -53,8 +52,7 @@ export function POSCart({
     staff,
     updateQuantity,
     removeFromCart,
-    updatePrimaryStaff,
-    updateSecondaryStaff,
+    updateStaff,
     pointsToRedeem,
     setPointsToRedeem,
     maxRedeemable,
@@ -203,8 +201,7 @@ export function POSCart({
                                     staff={staff}
                                     updateQuantity={updateQuantity}
                                     removeFromCart={removeFromCart}
-                                    updatePrimaryStaff={updatePrimaryStaff}
-                                    updateSecondaryStaff={updateSecondaryStaff}
+                                    updateStaff={updateStaff}
                                 />
                             ))
                         )}
@@ -310,15 +307,13 @@ function CartItem({
     staff,
     updateQuantity,
     removeFromCart,
-    updatePrimaryStaff,
-    updateSecondaryStaff
+    updateStaff
 }: {
     item: CartItemType;
     staff: StaffMember[];
     updateQuantity: (id: string, delta: number, itemType: 'service' | 'product') => void;
     removeFromCart: (id: string, itemType: 'service' | 'product') => void;
-    updatePrimaryStaff: (id: string, staffId: string, itemType: 'service' | 'product') => void;
-    updateSecondaryStaff: (id: string, staffId: string | null, itemType: 'service' | 'product') => void;
+    updateStaff: (id: string, staffId: string, type: 'primary' | 'secondary', itemType: 'service' | 'product') => void;
 }) {
     const primaryStaff = staff.find(s => s.id === item.primaryStaffId);
     const secondaryStaff = item.secondaryStaffId ? staff.find(s => s.id === item.secondaryStaffId) : null;
@@ -381,7 +376,7 @@ function CartItem({
                     </span>
                     <select
                         value={item.primaryStaffId}
-                        onChange={(e) => updatePrimaryStaff(item.id, e.target.value, item.itemType)}
+                        onChange={(e) => updateStaff(item.id, e.target.value, 'primary', item.itemType)}
                         className="flex-1 text-[11px] font-bold h-8 px-2 bg-gray-50 border-none rounded-lg focus:ring-1 focus:ring-[#2e7d32]/20 appearance-none text-gray-600 outline-none"
                     >
                         {staff.map((s) => (
@@ -396,7 +391,7 @@ function CartItem({
                         <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest w-12 shrink-0">Share</span>
                         <select
                             value={item.secondaryStaffId || ""}
-                            onChange={(e) => updateSecondaryStaff(item.id, e.target.value || null, item.itemType)}
+                            onChange={(e) => updateStaff(item.id, e.target.value || '', 'secondary', item.itemType)}
                             className="flex-1 text-[11px] font-bold h-8 px-2 bg-gray-50 border-none rounded-lg focus:ring-1 focus:ring-[#2e7d32]/20 appearance-none text-gray-600 outline-none"
                         >
                             <option value="">No Sharing</option>

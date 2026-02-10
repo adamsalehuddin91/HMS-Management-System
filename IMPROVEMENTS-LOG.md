@@ -118,12 +118,36 @@ After completing a sale, click "Muat Turun Resit" to download PDF receipt.
 - Show history in inventory module
 - Export capability
 
-#### 7. SMS Notification Settings
-**Priority:** MEDIUM
-**Scope:**
-- Settings page for SMS provider config
-- Booking confirmation SMS
-- Reminder SMS (24hr before)
+#### 7. WhatsApp Notifications via n8n
+**Status:** Implemented ✅
+
+**Changes Made:**
+- Added n8n webhook integration for WhatsApp notifications
+- Provider selection UI (None / Twilio SMS / WhatsApp n8n)
+- Webhook test button for connection verification
+- Server-side NotificationService for API routes
+- Bilingual WhatsApp templates with emoji support
+- Auto phone number formatting (Malaysian +60)
+
+**Files Created:**
+- `src/lib/services/notification-service.ts`
+
+**Files Modified:**
+- `src/lib/services/sms-service.ts`
+- `src/app/(dashboard)/settings/components/SMSNotificationSettings.tsx`
+- `src/app/api/public/booking/route.ts`
+
+**n8n Webhook Payload:**
+```json
+{
+  "to": "+60123456789",
+  "message": "✅ Tempahan Disahkan...",
+  "type": "whatsapp",
+  "notification_type": "confirmation | reminder | test"
+}
+```
+
+---
 
 #### 8. Staff Attendance
 **Priority:** LOW

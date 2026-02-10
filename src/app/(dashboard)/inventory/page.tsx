@@ -7,19 +7,20 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import type { Product } from "@/types";
+import { inventoryService } from "@/lib/services/inventory-service";
 
 // Sub-components
 import { InventoryStatsHeader } from "./components/InventoryStatsHeader";
 import { InventoryFilters } from "./components/InventoryFilters";
 import { ProductMasterTable } from "./components/ProductMasterTable";
 import { InventoryModals } from "./components/InventoryModals";
+import { InventoryHistoryTab } from "./components/InventoryHistoryTab";
 
 interface ProductWithUI extends Product {
   stockLevel: number;
   status: 'in_stock' | 'low_stock' | 'out_of_stock';
   image: string;
   price: number;
-  low_stock_threshold: number;
 }
 
 export default function InventoryPage() {
@@ -51,9 +52,8 @@ export default function InventoryPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
-      const supabase = createClient();
-      const { data, error } = await supabase.from('products').select('*').order('name');
-      if (!error && data) {
+      try {
+        const data = await inventoryService.getProducts();
         setProducts(data.map((p: any) => {
           let status: 'in_stock' | 'low_stock' | 'out_of_stock' = 'in_stock';
           const threshold = p.low_stock_threshold || 5;
@@ -61,6 +61,8 @@ export default function InventoryPage() {
           else if (p.stock_quantity <= threshold) status = 'low_stock';
           return { ...p, stockLevel: p.stock_quantity, status, price: p.sell_price, image: p.image_url || "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?q=80&w=200&auto=format&fit=crop" };
         }));
+      } catch (error) {
+        toast.error("Gagal memuatkan produk.");
       }
       setLoading(false);
     };
@@ -105,9 +107,9 @@ export default function InventoryPage() {
     setSavingEdit(true);
     const supabase = createClient();
     try {
-      const { error } = await supabase.from('products').update({ name: editProduct.name, brand: editProduct.brand, category: editProduct.category, sku: editProduct.sku, cost_price: editProduct.cost_price, sell_price: editProduct.sell_price, low_stock_threshold: editProduct.low_stock_threshold }).eq('id', editProduct.id);
+      const { error } = await supabase.from('products').update({ name: editProduct.name, brand: editProduct.brand, category: editProduct.category, sku: editProduct.sku, cost_price: editProduct.cost_price, sell_price: editProduct.sell_price, low_stock_threshold: (editProduct as any).low_stock_threshold }).eq('id', editProduct.id);
       if (error) throw error;
-      setProducts(prev => prev.map(p => p.id === editProduct.id ? { ...p, ...editProduct, price: editProduct.sell_price, status: (editProduct.stock_quantity === 0 ? 'out_of_stock' : (editProduct.stock_quantity <= (editProduct.low_stock_threshold || 5) ? 'low_stock' : 'in_stock')) } : p));
+      setProducts(prev => prev.map(p => p.id === editProduct.id ? { ...p, ...editProduct, price: editProduct.sell_price, status: (editProduct.stock_quantity === 0 ? 'out_of_stock' : (editProduct.stock_quantity <= ((editProduct as any).low_stock_threshold || 5) ? 'low_stock' : 'in_stock')) } : p));
       setShowEditModal(false);
       toast.success("Produk dikemaskini!");
     } catch (error) { toast.error("Gagal kemaskini produk."); }
@@ -115,18 +117,33 @@ export default function InventoryPage() {
   };
 
   const handleStockAdjustment = async () => {
-    if (!stockProduct || stockAdjustment === 0) return;
+    if (!stockProduct || stockAdjustment === 0 || !user) return;
     setSavingStock(true);
-    const supabase = createClient();
-    const newQty = Math.max(0, stockProduct.stock_quantity + stockAdjustment);
     try {
-      const { error } = await supabase.from('products').update({ stock_quantity: newQty }).eq('id', stockProduct.id);
-      if (error) throw error;
-      setProducts(prev => prev.map(p => p.id === stockProduct.id ? { ...p, stock_quantity: newQty, stockLevel: newQty, status: (newQty === 0 ? 'out_of_stock' : (newQty <= (p.low_stock_threshold || 5) ? 'low_stock' : 'in_stock')) } : p));
+      const type = stockAdjustment > 0 ? 'in' : 'out';
+      const { balanceAfter } = await inventoryService.adjustStock({
+        productId: stockProduct.id,
+        changeAmount: stockAdjustment,
+        balanceBefore: stockProduct.stock_quantity,
+        type,
+        reason: stockReason,
+        performedBy: user.id
+      });
+
+      setProducts(prev => prev.map(p => p.id === stockProduct.id ? {
+        ...p,
+        stock_quantity: balanceAfter,
+        stockLevel: balanceAfter,
+        status: (balanceAfter === 0 ? 'out_of_stock' : (balanceAfter <= ((p as any).low_stock_threshold || 5) ? 'low_stock' : 'in_stock'))
+      } : p));
+
       setShowStockModal(false);
       toast.success("Stok dilaraskan!");
-    } catch (error) { toast.error("Gagal laras stok."); }
-    finally { setSavingStock(false); }
+    } catch (error) {
+      toast.error("Gagal laras stok.");
+    } finally {
+      setSavingStock(false);
+    }
   };
 
   return (
@@ -145,9 +162,22 @@ export default function InventoryPage() {
           </button>
         </div>
 
-        <InventoryFilters searchQuery={searchQuery} setSearchQuery={setSearchQuery} categories={categories} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} />
+        {activeTab === "inventory" ? (
+          <>
+            <InventoryFilters searchQuery={searchQuery} setSearchQuery={setSearchQuery} categories={categories} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} />
 
-        <ProductMasterTable loading={loading} products={filteredProducts} actionMenuId={actionMenuId} setActionMenuId={setActionMenuId} openEditModal={(p) => { setEditProduct(p); setShowEditModal(true); setActionMenuId(null); }} openStockModal={(p) => { setStockProduct(p); setStockAdjustment(0); setStockReason("Restock"); setShowStockModal(true); setActionMenuId(null); }} />
+            <ProductMasterTable
+              loading={loading}
+              products={filteredProducts as any}
+              actionMenuId={actionMenuId}
+              setActionMenuId={setActionMenuId}
+              openEditModal={(p: any) => { setEditProduct(p); setShowEditModal(true); setActionMenuId(null); }}
+              openStockModal={(p: any) => { setStockProduct(p); setStockAdjustment(0); setStockReason("Restock"); setShowStockModal(true); setActionMenuId(null); }}
+            />
+          </>
+        ) : (
+          <InventoryHistoryTab />
+        )}
       </div>
 
       <InventoryModals

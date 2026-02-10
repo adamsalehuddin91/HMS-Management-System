@@ -100,21 +100,21 @@ export function SuccessModal({
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 className="w-full max-w-lg"
             >
-                <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[40px]">
-                    <CardContent className="p-0">
-                        {/* Header / Big Checkmark */}
-                        <div className="bg-[#2e7d32] p-10 text-center relative overflow-hidden">
+                <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[40px] max-h-[96vh] flex flex-col">
+                    <CardContent className="p-0 flex flex-col overflow-hidden">
+                        {/* Header / Big Checkmark - Fixed */}
+                        <div className="bg-[#2e7d32] p-8 md:p-10 text-center relative overflow-hidden shrink-0">
                             <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.2 }}
-                                className="h-24 w-24 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center mx-auto relative z-10"
+                                className="h-20 w-20 md:h-24 md:w-24 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center mx-auto relative z-10"
                             >
-                                <Check className="h-12 w-12 text-white stroke-[4px]" />
+                                <Check className="h-10 w-10 md:h-12 md:w-12 text-white stroke-[4px]" />
                             </motion.div>
-                            <div className="mt-6 relative z-10">
-                                <h2 className="text-3xl font-black text-white tracking-tight">Payment Complete!</h2>
-                                <p className="text-white/70 font-bold uppercase tracking-widest text-xs mt-2">No. Resit: #{receiptNo}</p>
+                            <div className="mt-4 md:mt-6 relative z-10">
+                                <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">Payment Complete!</h2>
+                                <p className="text-white/70 font-bold uppercase tracking-widest text-[10px] md:text-xs mt-2">No. Resit: #{receiptNo}</p>
                             </div>
 
                             {/* Decorative Elements */}
@@ -124,33 +124,34 @@ export function SuccessModal({
                             </div>
                         </div>
 
-                        <div className="p-8 space-y-8">
+                        {/* Scrollable Content */}
+                        <div className="p-6 md:p-8 space-y-6 md:space-y-8 overflow-y-auto custom-scrollbar flex-1">
                             {/* Summary Stats */}
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="p-5 bg-gray-50 rounded-3xl border border-gray-100/50">
+                                <div className="p-4 md:p-5 bg-gray-50 rounded-3xl border border-gray-100/50">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Received</p>
-                                    <p className="text-2xl font-black text-gray-800">{formatCurrency(total)}</p>
+                                    <p className="text-xl md:text-2xl font-black text-gray-800">{formatCurrency(total)}</p>
                                 </div>
-                                <div className="p-5 bg-gray-50 rounded-3xl border border-gray-100/50">
+                                <div className="p-4 md:p-5 bg-gray-50 rounded-3xl border border-gray-100/50">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Method</p>
-                                    <p className="text-sm font-bold text-gray-800 uppercase tracking-wider">{paymentMethod}</p>
+                                    <p className="text-xs md:text-sm font-bold text-gray-800 uppercase tracking-wider">{paymentMethod}</p>
                                 </div>
                             </div>
 
                             {selectedCustomer && (
-                                <div className="p-5 bg-[#2e7d32]/5 rounded-3xl border border-[#2e7d32]/10 flex items-center justify-between">
+                                <div className="p-4 md:p-5 bg-[#2e7d32]/5 rounded-3xl border border-[#2e7d32]/10 flex items-center justify-between">
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Customer Reward</p>
-                                        <p className="text-sm font-bold text-gray-800">{selectedCustomer.name}</p>
+                                        <p className="text-xs md:text-sm font-bold text-gray-800">{selectedCustomer.name}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-xl font-black text-[#2e7d32]">+{pointsEarned} pts</p>
+                                        <p className="text-lg md:text-xl font-black text-[#2e7d32]">+{pointsEarned} pts</p>
                                     </div>
                                 </div>
                             )}
 
                             {/* Commission Breakdown */}
-                            <div className="p-6 border border-gray-100 rounded-3xl bg-white shadow-sm">
+                            <div className="p-5 md:p-6 border border-gray-100 rounded-3xl bg-white shadow-sm">
                                 <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Staff Payout Summary</h4>
                                 <div className="space-y-4">
                                     {commissionBreakdown.map((item) => (
@@ -176,9 +177,9 @@ export function SuccessModal({
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="space-y-3">
+                            <div className="space-y-3 pb-2">
                                 <Button
-                                    className="w-full h-14 rounded-2xl bg-[#2e7d32] hover:bg-[#1b5e20] shadow-xl shadow-[#2e7d32]/20 text-md font-black tracking-wide transition-all"
+                                    className="w-full h-12 md:h-14 rounded-2xl bg-[#2e7d32] hover:bg-[#1b5e20] shadow-xl shadow-[#2e7d32]/20 text-md font-black tracking-wide transition-all"
                                     onClick={handleNewSale}
                                 >
                                     <Plus className="h-5 w-5 mr-3" />
@@ -186,7 +187,7 @@ export function SuccessModal({
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    className="w-full h-12 rounded-2xl border-[#2e7d32] text-[#2e7d32] hover:bg-[#2e7d32]/5 font-bold uppercase tracking-widest text-[11px] transition-all"
+                                    className="w-full h-11 md:h-12 rounded-2xl border-[#2e7d32] text-[#2e7d32] hover:bg-[#2e7d32]/5 font-bold uppercase tracking-widest text-[11px] transition-all"
                                     onClick={handleDownloadReceipt}
                                     disabled={downloading}
                                 >
@@ -204,7 +205,7 @@ export function SuccessModal({
                                 </Button>
                                 <Button
                                     variant="ghost"
-                                    className="w-full h-12 rounded-2xl text-gray-400 font-bold hover:text-gray-600 hover:bg-gray-50 transition-all uppercase tracking-widest text-[11px]"
+                                    className="w-full h-11 md:h-12 rounded-2xl text-gray-400 font-bold hover:text-gray-600 hover:bg-gray-50 transition-all uppercase tracking-widest text-[11px]"
                                     onClick={() => router.push("/dashboard")}
                                 >
                                     <ArrowLeft className="h-4 w-4 mr-2" />

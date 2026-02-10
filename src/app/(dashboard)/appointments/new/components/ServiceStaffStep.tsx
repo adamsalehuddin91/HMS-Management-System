@@ -1,12 +1,14 @@
 "use client";
 
-import { Scissors, Clock, User, Check, Loader2 } from "lucide-react";
-import { Avatar, Badge } from "@/components/ui";
+import { Scissors, Clock, User, Check, Loader2, Search } from "lucide-react";
+import { Avatar, Badge, Input } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { Service, Staff } from "@/lib/utils/appointment-utils";
 
 interface ServiceStaffStepProps {
     services: Service[];
+    searchService: string;
+    setSearchService: (val: string) => void;
     staff: Staff[];
     selectedService: Service | null;
     setSelectedService: (service: Service | null) => void;
@@ -18,6 +20,8 @@ interface ServiceStaffStepProps {
 
 export function ServiceStaffStep({
     services,
+    searchService,
+    setSearchService,
     staff,
     selectedService,
     setSelectedService,
@@ -39,7 +43,18 @@ export function ServiceStaffStep({
             </div>
 
             <div className="space-y-4">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Pilih Servis</label>
+                <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] ml-1">Pilih Servis</label>
+                    <div className="relative w-48 md:w-64 group">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-300 group-focus-within:text-[#2e7d32] transition-colors" />
+                        <Input
+                            placeholder="Cari servis..."
+                            value={searchService}
+                            onChange={(e) => setSearchService(e.target.value)}
+                            className="pl-9 h-9 text-xs rounded-xl border-gray-100 bg-gray-50/50 focus:bg-white transition-all font-bold text-gray-900"
+                        />
+                    </div>
+                </div>
                 <div className="grid grid-cols-1 gap-3 max-h-[250px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-200">
                     {loading ? (
                         <div className="py-8 text-center text-gray-400">
@@ -55,8 +70,8 @@ export function ServiceStaffStep({
                                 key={service.id}
                                 onClick={() => setSelectedService(service)}
                                 className={`p-4 rounded-2xl border text-left transition-all flex items-center gap-4 group ${selectedService?.id === service.id
-                                        ? "border-[#2e7d32] bg-green-50/30 ring-1 ring-[#2e7d32]/5 shadow-lg shadow-green-900/5"
-                                        : "border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50/50"
+                                    ? "border-[#2e7d32] bg-green-50/30 ring-1 ring-[#2e7d32]/5 shadow-lg shadow-green-900/5"
+                                    : "border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50/50"
                                     }`}
                             >
                                 <div className={`h-12 w-12 rounded-xl flex items-center justify-center transition-colors shadow-inner ${selectedService?.id === service.id ? "bg-white" : "bg-gray-50"
@@ -102,8 +117,8 @@ export function ServiceStaffStep({
                             key={s.id}
                             onClick={() => setSelectedStaff(s)}
                             className={`p-4 rounded-2xl border text-left transition-all flex items-center gap-3 group ${selectedStaff?.id === s.id
-                                    ? "border-[#2e7d32] bg-green-50/30 ring-1 ring-[#2e7d32]/5 shadow-lg shadow-green-900/5 transition-all active:scale-[0.98]"
-                                    : "border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50/50"
+                                ? "border-[#2e7d32] bg-green-50/30 ring-1 ring-[#2e7d32]/5 shadow-lg shadow-green-900/5 transition-all active:scale-[0.98]"
+                                : "border-gray-100 bg-white hover:border-gray-200 hover:bg-gray-50/50"
                                 }`}
                         >
                             <Avatar name={s.name} size="sm" className="h-8 w-8 shadow-inner" />

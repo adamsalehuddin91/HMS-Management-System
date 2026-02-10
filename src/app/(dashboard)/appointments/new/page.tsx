@@ -43,6 +43,7 @@ export default function NewBookingPage() {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchingCustomers, setSearchingCustomers] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Step state
@@ -60,6 +61,7 @@ export default function NewBookingPage() {
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [searchService, setSearchService] = useState("");
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const [notes, setNotes] = useState("");
@@ -71,15 +73,13 @@ export default function NewBookingPage() {
       setLoading(true);
       const supabase = createClient();
 
-      const [servicesRes, staffRes, customersRes] = await Promise.all([
+      const [servicesRes, staffRes] = await Promise.all([
         supabase.from('services').select('*').eq('is_active', true).order('name'),
         supabase.from('staff').select('*').eq('is_active', true).order('name'),
-        supabase.from('customers').select('*').order('name')
       ]);
 
       if (servicesRes.data) setServices(servicesRes.data);
       if (staffRes.data) setStaff(staffRes.data);
-      if (customersRes.data) setCustomers(customersRes.data);
 
       setLoading(false);
     };
@@ -87,15 +87,45 @@ export default function NewBookingPage() {
     fetchData();
   }, []);
 
-  // Derived state
-  const filteredCustomers = useMemo(() => {
-    return customers.filter(c =>
-      c.name.toLowerCase().includes(searchCustomer.toLowerCase()) ||
-      c.phone?.includes(searchCustomer)
-    );
-  }, [customers, searchCustomer]);
+  // Debounced customer search
+  useEffect(() => {
+    const searchCustomers = async () => {
+      setSearchingCustomers(true);
+      const supabase = createClient();
+      try {
+        let query = supabase.from('customers').select('*');
+        if (searchCustomer.trim()) {
+          query = query.or(`name.ilike.%${searchCustomer}%,phone.ilike.%${searchCustomer}%`);
+        }
+        const { data, error } = await query.order('name').limit(50);
+        if (!error && data) {
+          setCustomers(data);
+        }
+      } catch (err) {
+        console.error("Search error:", err);
+      } finally {
+        setSearchingCustomers(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      searchCustomers();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchCustomer]);
+
+  // No longer need client-side filtering useMemo, use the state directly
+  const filteredCustomers = customers;
 
   const isMember = isCustomerMember(selectedCustomer || undefined);
+
+  const filteredServices = useMemo(() => {
+    return services.filter(s =>
+      s.name.toLowerCase().includes(searchService.toLowerCase()) ||
+      s.category?.toLowerCase().includes(searchService.toLowerCase())
+    );
+  }, [services, searchService]);
 
   const servicePrice = useMemo(() => {
     if (!selectedService) return 0;
@@ -240,10 +270,10 @@ export default function NewBookingPage() {
             return (
               <div key={item.id} className="flex items-center">
                 <div className={`flex items-center gap-2.5 px-5 py-3 rounded-2xl transition-all duration-300 ${isActive
-                    ? "bg-[#2e7d32] text-white shadow-lg shadow-green-900/10 scale-105"
-                    : isCompleted
-                      ? "bg-green-100/50 text-[#2e7d32]"
-                      : "bg-white text-gray-300 border border-gray-100"
+                  ? "bg-[#2e7d32] text-white shadow-lg shadow-green-900/10 scale-105"
+                  : isCompleted
+                    ? "bg-green-100/50 text-[#2e7d32]"
+                    : "bg-white text-gray-300 border border-gray-100"
                   }`}>
                   <item.icon className={`h-4 w-4 ${isActive ? "animate-pulse" : ""}`} />
                   <span className="text-xs font-black uppercase tracking-widest hidden sm:block">{item.label}</span>
@@ -290,12 +320,14 @@ export default function NewBookingPage() {
                     walkInPhone={walkInPhone}
                     setWalkInPhone={setWalkInPhone}
                     filteredCustomers={filteredCustomers}
-                    loading={loading}
+                    loading={loading || searchingCustomers}
                   />
                 )}
                 {step === "service" && (
                   <ServiceStaffStep
-                    services={services}
+                    services={filteredServices}
+                    searchService={searchService}
+                    setSearchService={setSearchService}
                     staff={staff}
                     selectedService={selectedService}
                     setSelectedService={setSelectedService}
