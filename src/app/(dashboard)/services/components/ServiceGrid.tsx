@@ -7,13 +7,20 @@ import { formatCurrency } from "@/lib/utils";
 interface ServiceWithUI {
     id: string;
     name: string;
+    description?: string;
     category: string;
     price: number;
+    member_price?: number;
     memberPrice: number;
     duration_minutes: number;
+    commission_rate: number;
     commissionRate: number;
+    is_active: boolean;
     isActive: boolean;
+    image_url?: string;
     image: string;
+    created_at: string;
+    updated_at: string;
 }
 
 interface ServiceGridProps {
