@@ -28,7 +28,7 @@ export function InventoryHistoryTab() {
     const [filterDateTo, setFilterDateTo] = useState("");
 
     useEffect(() => {
-        inventoryService.getProductList().then(setProducts).catch(() => {});
+        inventoryService.getProductList().then(setProducts).catch(() => { });
     }, []);
 
     const fetchHistory = useCallback(async () => {
@@ -198,7 +198,7 @@ export function InventoryHistoryTab() {
                                                 {record.reason || "-"}
                                             </td>
                                             <td className="py-4 px-6 text-sm text-gray-500">
-                                                {record.performer?.full_name || "-"}
+                                                {record.performer?.name || "-"}
                                             </td>
                                         </tr>
                                     ))}

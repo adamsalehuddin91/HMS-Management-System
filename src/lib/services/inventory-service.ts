@@ -42,7 +42,7 @@ export const inventoryService = {
     // 1. Update product stock
     const { error: updateError } = await supabase
       .from('products')
-      .update({ 
+      .update({
         stock_quantity: balanceAfter,
         updated_at: new Date().toISOString()
       })
@@ -98,7 +98,7 @@ export const inventoryService = {
       .select(`
         *,
         product:products(name, brand),
-        performer:profiles(full_name)
+        performer:users(name)
       `, { count: 'exact' })
       .order('created_at', { ascending: false });
 
