@@ -1,8 +1,12 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Loader2, MoreVertical, Calendar } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Loader2, MoreVertical, Calendar, ShoppingCart, Eye, XCircle } from "lucide-react";
 import { Card, CardHeader, CardContent, CardTitle, Button, Avatar, Badge } from "@/components/ui";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 interface UpcomingAppointment {
     id: string;
@@ -21,6 +25,36 @@ export function UpcomingAppointmentsList({
     loading,
     upcomingAppointments
 }: UpcomingAppointmentsListProps) {
+    const router = useRouter();
+    const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+                setOpenMenuId(null);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const handleCancel = async (apt: UpcomingAppointment) => {
+        setOpenMenuId(null);
+        if (!confirm(`Batalkan tempahan ${apt.customer}?`)) return;
+        const supabase = createClient();
+        const { error } = await supabase
+            .from("bookings")
+            .update({ status: "cancelled" })
+            .eq("id", apt.id);
+        if (error) {
+            toast.error("Gagal batalkan tempahan");
+        } else {
+            toast.success("Tempahan dibatalkan");
+            window.location.reload();
+        }
+    };
+
     return (
         <Card className="border-none shadow-xl bg-white/50 backdrop-blur-md rounded-[2rem] overflow-hidden">
             <CardHeader className="p-8 pb-4">
@@ -70,9 +104,42 @@ export function UpcomingAppointmentsList({
                                             {apt.status}
                                         </Badge>
                                     </div>
-                                    <button className="p-2 hover:bg-gray-50 rounded-xl transition-colors">
-                                        <MoreVertical className="h-5 w-5 text-gray-300" />
-                                    </button>
+                                    <div className="relative" ref={openMenuId === apt.id ? menuRef : undefined}>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === apt.id ? null : apt.id); }}
+                                            className="p-2 hover:bg-gray-50 rounded-xl transition-colors"
+                                        >
+                                            <MoreVertical className="h-5 w-5 text-gray-300" />
+                                        </button>
+                                        {openMenuId === apt.id && (
+                                            <div
+                                                className="absolute right-0 top-10 w-48 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200"
+                                            >
+                                                <button
+                                                    onClick={() => { setOpenMenuId(null); router.push(`/pos?booking_id=${apt.id}`); }}
+                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-bold text-gray-700 hover:bg-[#2e7d32]/5 hover:text-[#2e7d32] transition-colors"
+                                                >
+                                                    <ShoppingCart className="h-4 w-4" />
+                                                    Mula Servis
+                                                </button>
+                                                <button
+                                                    onClick={() => { setOpenMenuId(null); router.push("/appointments"); }}
+                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                                                >
+                                                    <Eye className="h-4 w-4" />
+                                                    Lihat Detail
+                                                </button>
+                                                <div className="border-t border-gray-100 my-1" />
+                                                <button
+                                                    onClick={() => handleCancel(apt)}
+                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-left text-sm font-bold text-red-500 hover:bg-red-50 transition-colors"
+                                                >
+                                                    <XCircle className="h-4 w-4" />
+                                                    Batalkan
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}
