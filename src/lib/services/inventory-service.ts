@@ -75,20 +75,57 @@ export const inventoryService = {
   },
 
   /**
-   * Fetch stock movement history
+   * Fetch stock movement history with filters and pagination
    */
-  async getMovementHistory(limit = 50) {
+  async getMovementHistory({
+    limit = 20,
+    offset = 0,
+    productId,
+    type,
+    dateFrom,
+    dateTo
+  }: {
+    limit?: number;
+    offset?: number;
+    productId?: string;
+    type?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  } = {}) {
     const supabase = createClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from('stock_movements')
       .select(`
         *,
-        product:products(name, brand)
-      `)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+        product:products(name, brand),
+        performer:profiles(full_name)
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false });
+
+    if (productId) query = query.eq('product_id', productId);
+    if (type) query = query.eq('type', type);
+    if (dateFrom) query = query.gte('created_at', dateFrom);
+    if (dateTo) query = query.lte('created_at', dateTo + 'T23:59:59');
+
+    query = query.range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
 
     if (error) throw error;
-    return data;
+    return { data: data || [], total: count || 0 };
+  },
+
+  /**
+   * Fetch all products for filter dropdown
+   */
+  async getProductList() {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('products')
+      .select('id, name')
+      .order('name');
+
+    if (error) throw error;
+    return data || [];
   }
 };
