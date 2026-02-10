@@ -1,90 +1,36 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Search,
   ArrowLeft,
-  Calendar,
-  Clock,
   User,
   Scissors,
+  Calendar as CalendarIcon,
   Check,
-  ChevronLeft,
-  ChevronRight,
-  X,
-  Loader2,
+  Loader2
 } from "lucide-react";
 import { Header } from "@/components/layout/header";
-import { Button, Card, CardContent, Input, Avatar, Badge } from "@/components/ui";
+import { Button, Card, CardContent } from "@/components/ui";
 import { useAuthStore } from "@/lib/store/auth-store";
-import { formatCurrency } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion";
 
-// Types
-interface Service {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  member_price?: number;
-  duration_minutes?: number;
-}
+// Utilities & Components
+import {
+  Service,
+  Staff,
+  Customer,
+  isCustomerMember
+} from "@/lib/utils/appointment-utils";
+import { ALL_TIME_SLOTS } from "@/lib/utils/booking-utils";
 
-interface Staff {
-  id: string;
-  name: string;
-  role: string;
-  is_active?: boolean;
-}
-
-interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  points_balance: number;
-  tier: string;
-  is_member?: boolean;
-}
-
-// Helper to check if customer is member
-const isCustomerMember = (customer?: Customer): boolean => {
-  if (!customer) return false;
-  return customer.is_member || customer.tier === 'Member' || customer.tier === 'VIP';
-};
-
-const timeSlots = [
-  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "12:00", "12:30", "14:00", "14:30", "15:00", "15:30",
-  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30",
-  "19:00", "19:30", "20:00", "20:30",
-];
-
-// Generate calendar days for current month
-const generateCalendarDays = (year: number, month: number) => {
-  const days = [];
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const today = new Date();
-
-  // Add empty days for padding
-  for (let i = 0; i < firstDay.getDay(); i++) {
-    days.push({ day: null, isToday: false, isPast: false });
-  }
-
-  // Add actual days
-  for (let i = 1; i <= lastDay.getDate(); i++) {
-    const date = new Date(year, month, i);
-    days.push({
-      day: i,
-      isToday: date.toDateString() === today.toDateString(),
-      isPast: date < new Date(today.getFullYear(), today.getMonth(), today.getDate()),
-    });
-  }
-
-  return days;
-};
+import { CustomerSelectionStep } from "./components/CustomerSelectionStep";
+import { ServiceStaffStep } from "./components/ServiceStaffStep";
+import { DateTimeStep } from "./components/DateTimeStep";
+import { BookingSummaryStep } from "./components/BookingSummaryStep";
+import { BookingCompleteView } from "./components/BookingCompleteView";
 
 type Step = "customer" | "service" | "datetime" | "confirm" | "complete";
 
@@ -92,7 +38,7 @@ export default function NewBookingPage() {
   const router = useRouter();
   const { user } = useAuthStore();
 
-  // Data from Supabase
+  // Data state
   const [services, setServices] = useState<Service[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -119,43 +65,21 @@ export default function NewBookingPage() {
   const [notes, setNotes] = useState("");
   const [requireDeposit, setRequireDeposit] = useState(true);
 
-  // Fetch data from Supabase
+  // Fetch data
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       const supabase = createClient();
 
-      // Fetch services
-      const { data: servicesData } = await supabase
-        .from('services')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
+      const [servicesRes, staffRes, customersRes] = await Promise.all([
+        supabase.from('services').select('*').eq('is_active', true).order('name'),
+        supabase.from('staff').select('*').eq('is_active', true).order('name'),
+        supabase.from('customers').select('*').order('name')
+      ]);
 
-      if (servicesData) {
-        setServices(servicesData);
-      }
-
-      // Fetch staff
-      const { data: staffData } = await supabase
-        .from('staff')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
-      if (staffData) {
-        setStaff(staffData);
-      }
-
-      // Fetch customers
-      const { data: customersData } = await supabase
-        .from('customers')
-        .select('*')
-        .order('name');
-
-      if (customersData) {
-        setCustomers(customersData);
-      }
+      if (servicesRes.data) setServices(servicesRes.data);
+      if (staffRes.data) setStaff(staffRes.data);
+      if (customersRes.data) setCustomers(customersRes.data);
 
       setLoading(false);
     };
@@ -163,70 +87,45 @@ export default function NewBookingPage() {
     fetchData();
   }, []);
 
-  // Filtered customers
-  const filteredCustomers = customers.filter(
-    (c) =>
+  // Derived state
+  const filteredCustomers = useMemo(() => {
+    return customers.filter(c =>
       c.name.toLowerCase().includes(searchCustomer.toLowerCase()) ||
       c.phone?.includes(searchCustomer)
-  );
+    );
+  }, [customers, searchCustomer]);
 
-  // Calendar
-  const calendarDays = generateCalendarDays(currentMonth.getFullYear(), currentMonth.getMonth());
-  const monthName = currentMonth.toLocaleString("default", { month: "long", year: "numeric" });
-
-  const prevMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
-  };
-
-  const nextMonth = () => {
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
-  };
-
-  // Calculate deposit
   const isMember = isCustomerMember(selectedCustomer || undefined);
-  const servicePrice = selectedService
-    ? (isMember && selectedService.member_price ? selectedService.member_price : selectedService.price)
-    : 0;
-  const depositAmount = Math.ceil(servicePrice * 0.25); // 25% deposit
 
-  // Handle step navigation
+  const servicePrice = useMemo(() => {
+    if (!selectedService) return 0;
+    return isMember && selectedService.member_price ? selectedService.member_price : selectedService.price;
+  }, [selectedService, isMember]);
+
+  const depositAmount = Math.ceil(servicePrice * 0.25);
+
+  // Navigation
+  const steps: Step[] = ["customer", "service", "datetime", "confirm", "complete"];
+  const currentIndex = steps.indexOf(step);
+
   const canProceed = () => {
     switch (step) {
-      case "customer":
-        return selectedCustomer || (isWalkIn && walkInName && walkInPhone);
-      case "service":
-        return selectedService && selectedStaff;
-      case "datetime":
-        return selectedDate && selectedTime;
-      default:
-        return true;
+      case "customer": return !!selectedCustomer || (isWalkIn && !!walkInName && !!walkInPhone);
+      case "service": return !!selectedService && !!selectedStaff;
+      case "datetime": return !!selectedDate && !!selectedTime;
+      default: return true;
     }
   };
 
-  const handleNext = () => {
-    const steps: Step[] = ["customer", "service", "datetime", "confirm", "complete"];
-    const currentIndex = steps.indexOf(step);
-    if (currentIndex < steps.length - 1) {
-      setStep(steps[currentIndex + 1]);
-    }
-  };
-
-  const handleBack = () => {
-    const steps: Step[] = ["customer", "service", "datetime", "confirm", "complete"];
-    const currentIndex = steps.indexOf(step);
-    if (currentIndex > 0) {
-      setStep(steps[currentIndex - 1]);
-    }
-  };
+  const handleNext = () => currentIndex < steps.length - 1 && setStep(steps[currentIndex + 1]);
+  const handleBack = () => currentIndex > 0 && setStep(steps[currentIndex - 1]);
 
   const handleConfirmBooking = async () => {
     if (!selectedService || !selectedDate || !selectedTime) return;
-
     setSaving(true);
     const supabase = createClient();
 
     try {
-      // If walk-in, create customer first
       let customerId = selectedCustomer?.id || null;
 
       if (isWalkIn && walkInName && walkInPhone) {
@@ -238,7 +137,6 @@ export default function NewBookingPage() {
             tier: 'Normal',
             points_balance: 0,
             total_spent: 0,
-            created_at: new Date().toISOString()
           })
           .select()
           .single();
@@ -247,14 +145,6 @@ export default function NewBookingPage() {
         customerId = newCustomer.id;
       }
 
-      // Calculate deposit
-      const isMember = isCustomerMember(selectedCustomer || undefined);
-      const servicePrice = isMember && selectedService.member_price
-        ? selectedService.member_price
-        : selectedService.price;
-      const depositAmount = requireDeposit ? Math.ceil(servicePrice * 0.25) : 0;
-
-      // Create booking
       const bookingDate = format(selectedDate, 'yyyy-MM-dd');
       const { error: bookingError } = await supabase
         .from('bookings')
@@ -266,478 +156,218 @@ export default function NewBookingPage() {
           start_time: selectedTime,
           booking_time: selectedTime,
           status: 'pending',
-          deposit_amount: depositAmount,
-          deposit: depositAmount,
+          deposit_amount: requireDeposit ? depositAmount : 0,
           deposit_paid: false,
           notes: notes || null,
-          created_at: new Date().toISOString()
         });
 
       if (bookingError) throw bookingError;
-
       setStep("complete");
     } catch (error) {
-      console.error("Error creating booking:", error);
-      alert("Failed to create booking. Please try again.");
+      console.error(error);
+      alert("Failed to create booking");
     } finally {
       setSaving(false);
     }
   };
 
-  // Success screen
+  const handleReset = () => {
+    setStep("customer");
+    setSelectedCustomer(null);
+    setSelectedService(null);
+    setSelectedStaff(null);
+    setSelectedDate(null);
+    setSelectedTime(null);
+    setNotes("");
+    setIsWalkIn(false);
+    setWalkInName("");
+    setWalkInPhone("");
+  };
+
   if (step === "complete") {
     return (
-      <div className="min-h-screen">
-        <Header title="Booking Confirmed" user={user!} />
-        <div className="p-6 flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <Card className="w-full max-w-md text-center">
-            <CardContent className="p-8">
-              <div className="h-20 w-20 rounded-full bg-[var(--success)] flex items-center justify-center mx-auto mb-6">
-                <Check className="h-10 w-10 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold mb-2">Booking Confirmed!</h2>
-              <p className="text-[var(--muted)] mb-6">Appointment has been scheduled successfully</p>
-
-              <div className="bg-[var(--secondary)] rounded-xl p-4 mb-6 text-left space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-[var(--muted)]">Customer</span>
-                  <span className="font-medium">{selectedCustomer?.name || walkInName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--muted)]">Service</span>
-                  <span className="font-medium">{selectedService?.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--muted)]">Date & Time</span>
-                  <span className="font-medium">
-                    {selectedDate?.toLocaleDateString("en-MY", { day: "numeric", month: "short" })} at {selectedTime}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--muted)]">Staff</span>
-                  <span className="font-medium">{selectedStaff?.name}</span>
-                </div>
-                {requireDeposit && (
-                  <div className="flex justify-between pt-2 border-t border-[var(--border)]">
-                    <span className="text-[var(--muted)]">Deposit Required</span>
-                    <span className="font-bold text-[var(--primary)]">{formatCurrency(depositAmount)}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-3">
-                <Button className="w-full" size="lg" onClick={() => {
-                  setStep("customer");
-                  setSelectedCustomer(null);
-                  setSelectedService(null);
-                  setSelectedStaff(null);
-                  setSelectedDate(null);
-                  setSelectedTime(null);
-                  setNotes("");
-                }}>
-                  New Booking
-                </Button>
-                <Button variant="outline" className="w-full" size="lg" onClick={() => router.push("/appointments")}>
-                  Back to Calendar
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-[#f8fcf9]">
+        <Header title="Tempahan Selesai" user={user!} />
+        <div className="p-6">
+          <BookingCompleteView
+            selectedCustomer={selectedCustomer}
+            walkInName={walkInName}
+            selectedService={selectedService}
+            selectedStaff={selectedStaff}
+            selectedDate={selectedDate}
+            selectedTime={selectedTime}
+            depositAmount={depositAmount}
+            requireDeposit={requireDeposit}
+            onReset={handleReset}
+            onGoToCalendar={() => router.push("/appointments")}
+          />
         </div>
       </div>
     );
   }
 
+  const navigationItems = [
+    { id: "customer", label: "Pelanggan", icon: User },
+    { id: "service", label: "Servis", icon: Scissors },
+    { id: "datetime", label: "Waktu", icon: CalendarIcon },
+    { id: "confirm", label: "Sahkan", icon: Check },
+  ];
+
   return (
-    <div className="min-h-screen">
-      <Header title="New Booking" subtitle="Schedule an appointment" user={user!} />
+    <div className="min-h-screen bg-[#f8fcf9]">
+      <Header title="Tempahan Baru" subtitle="Dashboard / New Booking" user={user!} />
 
-      <div className="p-6">
-        {/* Back Button */}
-        <Button variant="ghost" className="mb-4" onClick={() => router.push("/appointments")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Calendar
-        </Button>
+      <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-8">
+        {/* Header Actions */}
+        <div className="flex items-center justify-between">
+          <Button
+            variant="ghost"
+            onClick={() => router.push("/appointments")}
+            className="rounded-xl font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all border border-transparent hover:border-gray-200 px-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Balik ke Kalendar
+          </Button>
+        </div>
 
-        {/* Progress Steps */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          {[
-            { id: "customer", label: "Customer", icon: User },
-            { id: "service", label: "Service", icon: Scissors },
-            { id: "datetime", label: "Date & Time", icon: Calendar },
-            { id: "confirm", label: "Confirm", icon: Check },
-          ].map((s, index) => {
-            const steps: Step[] = ["customer", "service", "datetime", "confirm"];
-            const currentIndex = steps.indexOf(step);
-            const stepIndex = steps.indexOf(s.id as Step);
-            const isActive = step === s.id;
-            const isCompleted = stepIndex < currentIndex;
+        {/* Vertical Progress Steps */}
+        <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4 px-2">
+          {navigationItems.map((item, index) => {
+            const stepIndex = steps.indexOf(item.id as Step);
+            const isActive = step === item.id;
+            const isCompleted = currentIndex > stepIndex;
 
             return (
-              <div key={s.id} className="flex items-center">
-                <div className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-                  isActive
-                    ? "bg-[var(--primary)] text-white"
+              <div key={item.id} className="flex items-center">
+                <div className={`flex items-center gap-2.5 px-5 py-3 rounded-2xl transition-all duration-300 ${isActive
+                    ? "bg-[#2e7d32] text-white shadow-lg shadow-green-900/10 scale-105"
                     : isCompleted
-                    ? "bg-[var(--primary-light)] text-[var(--primary)]"
-                    : "bg-[var(--secondary)] text-[var(--muted)]"
-                }`}>
-                  <s.icon className="h-4 w-4" />
-                  <span className="text-sm font-medium hidden sm:block">{s.label}</span>
+                      ? "bg-green-100/50 text-[#2e7d32]"
+                      : "bg-white text-gray-300 border border-gray-100"
+                  }`}>
+                  <item.icon className={`h-4 w-4 ${isActive ? "animate-pulse" : ""}`} />
+                  <span className="text-xs font-black uppercase tracking-widest hidden sm:block">{item.label}</span>
+                  {isCompleted && <Check className="h-3 w-3 stroke-[4px]" />}
                 </div>
-                {index < 3 && (
-                  <div className={`w-8 h-0.5 mx-1 ${
-                    isCompleted ? "bg-[var(--primary)]" : "bg-[var(--border)]"
-                  }`} />
+                {index < navigationItems.length - 1 && (
+                  <div className={`w-4 md:w-8 h-0.5 rounded-full transition-colors duration-500 ${isCompleted ? "bg-[#2e7d32]" : "bg-gray-100"
+                    }`} />
                 )}
               </div>
             );
           })}
         </div>
 
-        {/* Step Content */}
-        <Card className="max-w-2xl mx-auto">
-          <CardContent className="p-6">
-            {/* Step 1: Customer Selection */}
-            {step === "customer" && (
-              <div>
-                <h3 className="text-lg font-bold mb-4">Select Customer</h3>
-
-                <div className="flex gap-2 mb-4">
-                  <Button
-                    variant={!isWalkIn ? "primary" : "outline"}
-                    onClick={() => setIsWalkIn(false)}
-                    className="flex-1"
-                  >
-                    Existing Customer
-                  </Button>
-                  <Button
-                    variant={isWalkIn ? "primary" : "outline"}
-                    onClick={() => {
-                      setIsWalkIn(true);
-                      setSelectedCustomer(null);
-                    }}
-                    className="flex-1"
-                  >
-                    Walk-in
-                  </Button>
-                </div>
-
-                {!isWalkIn ? (
-                  <div>
-                    <Input
-                      placeholder="Search by name or phone..."
-                      icon={<Search className="h-4 w-4" />}
-                      value={searchCustomer}
-                      onChange={(e) => setSearchCustomer(e.target.value)}
-                      className="mb-4"
-                    />
-                    <div className="space-y-2 max-h-60 overflow-auto">
-                      {loading ? (
-                        <div className="py-4 text-center text-[var(--muted)]">
-                          <Loader2 className="h-5 w-5 animate-spin mx-auto mb-1" />
-                          Loading customers...
-                        </div>
-                      ) : filteredCustomers.map((customer) => (
-                        <button
-                          key={customer.id}
-                          onClick={() => setSelectedCustomer(customer)}
-                          className={`w-full p-4 rounded-xl border text-left transition-all flex items-center gap-3 ${
-                            selectedCustomer?.id === customer.id
-                              ? "border-[var(--primary)] bg-[var(--primary-light)]"
-                              : "border-[var(--border)] hover:border-[var(--primary)]"
-                          }`}
-                        >
-                          <Avatar name={customer.name} />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{customer.name}</span>
-                              <Badge variant={customer.tier === 'VIP' ? 'warning' : customer.tier === 'Member' ? 'success' : 'default'}>
-                                {customer.tier}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-[var(--muted)]">{customer.phone}</p>
-                          </div>
-                          {selectedCustomer?.id === customer.id && (
-                            <Check className="h-5 w-5 text-[var(--primary)]" />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <Input
-                      placeholder="Customer name"
-                      value={walkInName}
-                      onChange={(e) => setWalkInName(e.target.value)}
-                    />
-                    <Input
-                      placeholder="Phone number (e.g., 012-345 6789)"
-                      value={walkInPhone}
-                      onChange={(e) => setWalkInPhone(e.target.value)}
-                    />
-                  </div>
+        {/* Step Content Card */}
+        <Card className="border-none shadow-2xl bg-white/70 backdrop-blur-xl rounded-[2.5rem] overflow-hidden relative">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gray-100">
+            <motion.div
+              className="h-full bg-[#2e7d32]"
+              initial={{ width: "0%" }}
+              animate={{ width: `${(currentIndex / (navigationItems.length - 1)) * 100}%` }}
+              transition={{ duration: 0.5, ease: "circOut" }}
+            />
+          </div>
+          <CardContent className="p-8 md:p-12">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                {step === "customer" && (
+                  <CustomerSelectionStep
+                    isWalkIn={isWalkIn}
+                    setIsWalkIn={setIsWalkIn}
+                    searchCustomer={searchCustomer}
+                    setSearchCustomer={setSearchCustomer}
+                    selectedCustomer={selectedCustomer}
+                    setSelectedCustomer={setSelectedCustomer}
+                    walkInName={walkInName}
+                    setWalkInName={setWalkInName}
+                    walkInPhone={walkInPhone}
+                    setWalkInPhone={setWalkInPhone}
+                    filteredCustomers={filteredCustomers}
+                    loading={loading}
+                  />
                 )}
-              </div>
-            )}
-
-            {/* Step 2: Service & Staff Selection */}
-            {step === "service" && (
-              <div>
-                <h3 className="text-lg font-bold mb-4">Select Service & Staff</h3>
-
-                <div className="mb-6">
-                  <p className="text-sm font-medium text-[var(--muted)] mb-2">Service</p>
-                  <div className="grid grid-cols-1 gap-2 max-h-48 overflow-auto">
-                    {loading ? (
-                      <div className="py-4 text-center text-[var(--muted)]">
-                        <Loader2 className="h-5 w-5 animate-spin mx-auto mb-1" />
-                        Loading services...
-                      </div>
-                    ) : services.map((service) => {
-                      const showMemberPrice = isMember && service.member_price && service.member_price < service.price;
-                      const displayPrice = showMemberPrice ? service.member_price : service.price;
-                      return (
-                        <button
-                          key={service.id}
-                          onClick={() => setSelectedService(service)}
-                          className={`p-4 rounded-xl border text-left transition-all ${
-                            selectedService?.id === service.id
-                              ? "border-[var(--primary)] bg-[var(--primary-light)]"
-                              : "border-[var(--border)] hover:border-[var(--primary)]"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">{service.name}</p>
-                              <p className="text-sm text-[var(--muted)]">{service.duration_minutes || 60} mins</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-bold text-[var(--primary)]">
-                                {formatCurrency(displayPrice!)}
-                              </p>
-                              {showMemberPrice && (
-                                <p className="text-xs text-[var(--muted)] line-through">
-                                  {formatCurrency(service.price)}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-[var(--muted)] mb-2">Assign Staff</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {loading ? (
-                      <div className="col-span-2 py-4 text-center text-[var(--muted)]">
-                        <Loader2 className="h-5 w-5 animate-spin mx-auto mb-1" />
-                        Loading staff...
-                      </div>
-                    ) : staff.map((s) => (
-                      <button
-                        key={s.id}
-                        onClick={() => setSelectedStaff(s)}
-                        className={`p-4 rounded-xl border text-left transition-all ${
-                          selectedStaff?.id === s.id
-                            ? "border-[var(--primary)] bg-[var(--primary-light)]"
-                            : "border-[var(--border)] hover:border-[var(--primary)]"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar name={s.name} size="sm" />
-                          <div>
-                            <p className="font-medium text-sm">{s.name}</p>
-                            <p className="text-xs text-[var(--muted)]">{s.role}</p>
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Date & Time */}
-            {step === "datetime" && (
-              <div>
-                <h3 className="text-lg font-bold mb-4">Select Date & Time</h3>
-
-                {/* Calendar */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <button onClick={prevMonth} className="p-2 hover:bg-[var(--secondary)] rounded-lg">
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    <span className="font-medium">{monthName}</span>
-                    <button onClick={nextMonth} className="p-2 hover:bg-[var(--secondary)] rounded-lg">
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-7 gap-1">
-                    {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
-                      <div key={i} className="p-2 text-center text-xs font-medium text-[var(--muted)]">
-                        {day}
-                      </div>
-                    ))}
-                    {calendarDays.map((item, idx) => {
-                      const isSelected = selectedDate &&
-                        item.day === selectedDate.getDate() &&
-                        currentMonth.getMonth() === selectedDate.getMonth() &&
-                        currentMonth.getFullYear() === selectedDate.getFullYear();
-
-                      return (
-                        <button
-                          key={idx}
-                          disabled={!item.day || item.isPast}
-                          onClick={() => {
-                            if (item.day && !item.isPast) {
-                              setSelectedDate(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), item.day));
-                            }
-                          }}
-                          className={`p-2 text-center rounded-lg transition-all ${
-                            !item.day
-                              ? ""
-                              : item.isPast
-                              ? "text-[var(--muted)] cursor-not-allowed"
-                              : isSelected
-                              ? "bg-[var(--primary)] text-white"
-                              : item.isToday
-                              ? "bg-[var(--primary-light)] text-[var(--primary)] font-bold"
-                              : "hover:bg-[var(--secondary)]"
-                          }`}
-                        >
-                          {item.day}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Time Slots */}
-                {selectedDate && (
-                  <div>
-                    <p className="text-sm font-medium text-[var(--muted)] mb-2 flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Available Times
-                    </p>
-                    <div className="grid grid-cols-4 gap-2">
-                      {timeSlots.map((time) => (
-                        <button
-                          key={time}
-                          onClick={() => setSelectedTime(time)}
-                          className={`p-2 text-sm rounded-lg border transition-all ${
-                            selectedTime === time
-                              ? "border-[var(--primary)] bg-[var(--primary)] text-white"
-                              : "border-[var(--border)] hover:border-[var(--primary)]"
-                          }`}
-                        >
-                          {time}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                {step === "service" && (
+                  <ServiceStaffStep
+                    services={services}
+                    staff={staff}
+                    selectedService={selectedService}
+                    setSelectedService={setSelectedService}
+                    selectedStaff={selectedStaff}
+                    setSelectedStaff={setSelectedStaff}
+                    isMember={isMember}
+                    loading={loading}
+                  />
                 )}
-              </div>
-            )}
+                {step === "datetime" && (
+                  <DateTimeStep
+                    currentMonth={currentMonth}
+                    setCurrentMonth={setCurrentMonth}
+                    selectedDate={selectedDate}
+                    setSelectedDate={setSelectedDate}
+                    selectedTime={selectedTime}
+                    setSelectedTime={setSelectedTime}
+                    timeSlots={ALL_TIME_SLOTS}
+                  />
+                )}
+                {step === "confirm" && (
+                  <BookingSummaryStep
+                    selectedCustomer={selectedCustomer}
+                    walkInName={walkInName}
+                    walkInPhone={walkInPhone}
+                    selectedService={selectedService}
+                    selectedStaff={selectedStaff}
+                    selectedDate={selectedDate}
+                    selectedTime={selectedTime}
+                    notes={notes}
+                    setNotes={setNotes}
+                    requireDeposit={requireDeposit}
+                    setRequireDeposit={setRequireDeposit}
+                    servicePrice={servicePrice}
+                    depositAmount={depositAmount}
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
 
-            {/* Step 4: Confirmation */}
-            {step === "confirm" && (
-              <div>
-                <h3 className="text-lg font-bold mb-4">Confirm Booking</h3>
-
-                <div className="space-y-4 mb-6">
-                  <div className="p-4 bg-[var(--secondary)] rounded-xl">
-                    <p className="text-xs text-[var(--muted)] uppercase tracking-wide mb-1">Customer</p>
-                    <p className="font-medium">{selectedCustomer?.name || walkInName}</p>
-                    <p className="text-sm text-[var(--muted)]">{selectedCustomer?.phone || walkInPhone}</p>
-                  </div>
-
-                  <div className="p-4 bg-[var(--secondary)] rounded-xl">
-                    <p className="text-xs text-[var(--muted)] uppercase tracking-wide mb-1">Service</p>
-                    <p className="font-medium">{selectedService?.name}</p>
-                    <p className="text-sm text-[var(--muted)]">{selectedService?.duration_minutes || 60} mins</p>
-                    <p className="font-bold text-[var(--primary)] mt-1">{formatCurrency(servicePrice)}</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-[var(--secondary)] rounded-xl">
-                      <p className="text-xs text-[var(--muted)] uppercase tracking-wide mb-1">Date & Time</p>
-                      <p className="font-medium">
-                        {selectedDate?.toLocaleDateString("en-MY", {
-                          weekday: "short",
-                          day: "numeric",
-                          month: "short",
-                        })}
-                      </p>
-                      <p className="text-sm">{selectedTime}</p>
-                    </div>
-                    <div className="p-4 bg-[var(--secondary)] rounded-xl">
-                      <p className="text-xs text-[var(--muted)] uppercase tracking-wide mb-1">Staff</p>
-                      <p className="font-medium">{selectedStaff?.name}</p>
-                      <p className="text-sm text-[var(--muted)]">{selectedStaff?.role}</p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-[var(--muted)]">Notes (Optional)</label>
-                    <textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Any special requests or notes..."
-                      className="w-full mt-1 p-3 border border-[var(--border)] rounded-xl resize-none h-20"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 border border-[var(--border)] rounded-xl">
-                    <div>
-                      <p className="font-medium">Require Deposit</p>
-                      <p className="text-sm text-[var(--muted)]">25% of service price ({formatCurrency(depositAmount)})</p>
-                    </div>
-                    <button
-                      onClick={() => setRequireDeposit(!requireDeposit)}
-                      className={`w-12 h-6 rounded-full transition-colors ${
-                        requireDeposit ? "bg-[var(--primary)]" : "bg-[var(--border)]"
-                      }`}
-                    >
-                      <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                        requireDeposit ? "translate-x-6" : "translate-x-0.5"
-                      }`} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Navigation Buttons */}
-            <div className="flex gap-3 mt-6 pt-6 border-t border-[var(--border)]">
-              {step !== "customer" && (
-                <Button variant="outline" onClick={handleBack} className="flex-1" disabled={saving}>
+            {/* Navigation Footer */}
+            <div className="flex gap-4 mt-12 pt-10 border-t border-gray-100">
+              {currentIndex > 0 && (
+                <Button
+                  variant="ghost"
+                  onClick={handleBack}
+                  className="h-16 px-8 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all border-2 border-transparent hover:border-gray-100"
+                  disabled={saving}
+                >
                   Back
                 </Button>
               )}
               {step === "confirm" ? (
-                <Button onClick={handleConfirmBooking} className="flex-1" size="lg" disabled={saving}>
+                <Button
+                  onClick={handleConfirmBooking}
+                  className="flex-1 h-16 rounded-2xl bg-[#2e7d32] hover:bg-[#1b5e20] text-white font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-green-900/10 transition-all active:scale-[0.98] group"
+                  disabled={saving}
+                >
                   {saving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Creating...
-                    </>
+                    <Loader2 className="h-5 w-5 animate-spin mx-auto" />
                   ) : (
-                    "Confirm Booking"
+                    <span className="flex items-center justify-center gap-2">
+                      Confirm Appointment
+                      <Check className="h-4 w-4 group-hover:scale-125 transition-transform" />
+                    </span>
                   )}
                 </Button>
               ) : (
                 <Button
                   onClick={handleNext}
                   disabled={!canProceed()}
-                  className="flex-1"
-                  size="lg"
+                  className="flex-1 h-16 rounded-2xl bg-[#2e7d32] hover:bg-[#1b5e20] text-white font-black text-xs uppercase tracking-[0.3em] shadow-xl shadow-green-900/10 transition-all active:scale-[0.98] disabled:bg-gray-100 disabled:text-gray-300 disabled:shadow-none"
                 >
                   Continue
                 </Button>

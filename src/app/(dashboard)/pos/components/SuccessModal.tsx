@@ -1,0 +1,220 @@
+"use client";
+
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Check, Plus, ArrowLeft, Download, Loader2 } from "lucide-react";
+import { Button, Card, CardContent } from "@/components/ui";
+import { formatCurrency } from "@/lib/utils";
+import { CartItem, StaffMember, getCommissionBreakdown } from "@/lib/utils/pos-calculations";
+import { downloadReceipt, ReceiptData, ReceiptItem } from "@/lib/utils/receipt-generator";
+
+interface SuccessModalProps {
+    total: number;
+    subtotal: number;
+    pointsRedeemed: number;
+    pointsDiscount: number;
+    depositDeducted: number;
+    paymentMethod: string;
+    selectedCustomer: any;
+    pointsEarned: number;
+    cart: CartItem[];
+    staff: StaffMember[];
+    saleId: string;
+    businessInfo: {
+        name: string;
+        phone: string;
+        address?: string;
+    };
+    handleNewSale: () => void;
+    router: any;
+}
+
+export function SuccessModal({
+    total,
+    subtotal,
+    pointsRedeemed,
+    pointsDiscount,
+    depositDeducted,
+    paymentMethod,
+    selectedCustomer,
+    pointsEarned,
+    cart,
+    staff,
+    saleId,
+    businessInfo,
+    handleNewSale,
+    router
+}: SuccessModalProps) {
+    const [downloading, setDownloading] = useState(false);
+    const commissionBreakdown = getCommissionBreakdown(cart, staff);
+    const totalCommission = commissionBreakdown.reduce((sum, i) => sum + i.amount, 0);
+    const receiptNo = saleId.slice(0, 8).toUpperCase();
+
+    const handleDownloadReceipt = async () => {
+        setDownloading(true);
+        try {
+            // Map cart items to receipt items
+            const receiptItems: ReceiptItem[] = cart.map(item => {
+                const primaryStaff = staff.find(s => s.id === item.primaryStaffId);
+                return {
+                    name: item.name,
+                    quantity: item.quantity,
+                    price: item.price,
+                    total: item.price * item.quantity,
+                    itemType: item.itemType,
+                    staffName: primaryStaff?.name
+                };
+            });
+
+            const receiptData: ReceiptData = {
+                receiptNo,
+                date: new Date(),
+                businessName: businessInfo.name || "HMS Salon",
+                businessPhone: businessInfo.phone || "-",
+                businessAddress: businessInfo.address,
+                customerName: selectedCustomer?.name,
+                customerPhone: selectedCustomer?.phone,
+                items: receiptItems,
+                subtotal,
+                pointsRedeemed,
+                pointsDiscount,
+                depositDeducted,
+                total,
+                paymentMethod,
+                pointsEarned
+            };
+
+            downloadReceipt(receiptData);
+        } catch (error) {
+            console.error("Failed to generate receipt:", error);
+            alert("Gagal menjana resit. Sila cuba lagi.");
+        } finally {
+            setDownloading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.8, y: 40 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="w-full max-w-lg"
+            >
+                <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[40px]">
+                    <CardContent className="p-0">
+                        {/* Header / Big Checkmark */}
+                        <div className="bg-[#2e7d32] p-10 text-center relative overflow-hidden">
+                            <motion.div
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: "spring", damping: 12, stiffness: 200, delay: 0.2 }}
+                                className="h-24 w-24 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center mx-auto relative z-10"
+                            >
+                                <Check className="h-12 w-12 text-white stroke-[4px]" />
+                            </motion.div>
+                            <div className="mt-6 relative z-10">
+                                <h2 className="text-3xl font-black text-white tracking-tight">Payment Complete!</h2>
+                                <p className="text-white/70 font-bold uppercase tracking-widest text-xs mt-2">No. Resit: #{receiptNo}</p>
+                            </div>
+
+                            {/* Decorative Elements */}
+                            <div className="absolute top-0 left-0 w-full h-full opacity-10">
+                                <div className="absolute top-[-10%] left-[-10%] w-40 h-40 bg-white rounded-full blur-3xl" />
+                                <div className="absolute bottom-[-10%] right-[-10%] w-40 h-40 bg-white rounded-full blur-3xl" />
+                            </div>
+                        </div>
+
+                        <div className="p-8 space-y-8">
+                            {/* Summary Stats */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="p-5 bg-gray-50 rounded-3xl border border-gray-100/50">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Received</p>
+                                    <p className="text-2xl font-black text-gray-800">{formatCurrency(total)}</p>
+                                </div>
+                                <div className="p-5 bg-gray-50 rounded-3xl border border-gray-100/50">
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Method</p>
+                                    <p className="text-sm font-bold text-gray-800 uppercase tracking-wider">{paymentMethod}</p>
+                                </div>
+                            </div>
+
+                            {selectedCustomer && (
+                                <div className="p-5 bg-[#2e7d32]/5 rounded-3xl border border-[#2e7d32]/10 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Customer Reward</p>
+                                        <p className="text-sm font-bold text-gray-800">{selectedCustomer.name}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-xl font-black text-[#2e7d32]">+{pointsEarned} pts</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Commission Breakdown */}
+                            <div className="p-6 border border-gray-100 rounded-3xl bg-white shadow-sm">
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Staff Payout Summary</h4>
+                                <div className="space-y-4">
+                                    {commissionBreakdown.map((item) => (
+                                        <div key={item.staffId} className="flex justify-between items-center group">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-2 w-2 rounded-full bg-[#2e7d32] opacity-20 group-hover:opacity-100 transition-opacity" />
+                                                <div>
+                                                    <p className="text-xs font-bold text-gray-700">{item.staffName}</p>
+                                                    <p className="text-[9px] text-gray-400 font-bold uppercase">{item.role}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-sm font-black text-[#2e7d32]">{formatCurrency(item.amount)}</p>
+                                                <p className="text-[9px] text-gray-400 font-bold">{item.rate}% commission</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <div className="flex justify-between pt-4 border-t border-gray-100">
+                                        <span className="text-xs font-black text-gray-800 uppercase tracking-widest">Total Commission</span>
+                                        <span className="text-sm font-black text-[#2e7d32]">{formatCurrency(totalCommission)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="space-y-3">
+                                <Button
+                                    className="w-full h-14 rounded-2xl bg-[#2e7d32] hover:bg-[#1b5e20] shadow-xl shadow-[#2e7d32]/20 text-md font-black tracking-wide transition-all"
+                                    onClick={handleNewSale}
+                                >
+                                    <Plus className="h-5 w-5 mr-3" />
+                                    Initiate Next Sale
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className="w-full h-12 rounded-2xl border-[#2e7d32] text-[#2e7d32] hover:bg-[#2e7d32]/5 font-bold uppercase tracking-widest text-[11px] transition-all"
+                                    onClick={handleDownloadReceipt}
+                                    disabled={downloading}
+                                >
+                                    {downloading ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            Menjana Resit...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Download className="h-4 w-4 mr-2" />
+                                            Muat Turun Resit
+                                        </>
+                                    )}
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    className="w-full h-12 rounded-2xl text-gray-400 font-bold hover:text-gray-600 hover:bg-gray-50 transition-all uppercase tracking-widest text-[11px]"
+                                    onClick={() => router.push("/dashboard")}
+                                >
+                                    <ArrowLeft className="h-4 w-4 mr-2" />
+                                    Exit to Dashboard
+                                </Button>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
+        </div>
+    );
+}

@@ -21,13 +21,15 @@ export function StatCard({ title, value, change, changeLabel, icon: Icon, classN
         <div>
           <p className="text-sm font-medium text-[var(--primary)] uppercase tracking-wide">{title}</p>
           <p className="mt-2 text-3xl font-bold text-[var(--foreground)]">{value}</p>
-          {change !== undefined && (
+          {change !== undefined ? (
             <div className={cn("mt-2 flex items-center gap-1 text-sm", isPositive ? "text-[var(--success)]" : "text-[var(--error)]")}>
               {isPositive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
               <span>{isPositive ? "+" : ""}{change}%</span>
               {changeLabel && <span className="text-[var(--muted)]">{changeLabel}</span>}
             </div>
-          )}
+          ) : changeLabel ? (
+            <p className="mt-2 text-sm text-[var(--muted)]">{changeLabel}</p>
+          ) : null}
         </div>
         {Icon && (
           <div className="p-2 bg-[var(--primary-light)] rounded-xl">
