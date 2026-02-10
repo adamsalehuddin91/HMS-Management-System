@@ -164,7 +164,7 @@ export default function InventoryPage() {
 
         {activeTab === "inventory" ? (
           <>
-            <InventoryFilters searchQuery={searchQuery} setSearchQuery={setSearchQuery} categories={categories} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} />
+            <InventoryFilters searchQuery={searchQuery} setSearchQuery={setSearchQuery} categories={categories} categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter} onAddProduct={() => setShowAddModal(true)} isAdmin={isAdmin} />
 
             <ProductMasterTable
               loading={loading}
