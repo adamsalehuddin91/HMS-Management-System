@@ -1,7 +1,7 @@
 "use client";
 
 import { X, Loader2, Download, AlertTriangle } from "lucide-react";
-import { Button, Card, CardContent } from "@/components/ui";
+import { Badge, Button, Card, CardContent } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 
 interface ReportsModalsProps {
