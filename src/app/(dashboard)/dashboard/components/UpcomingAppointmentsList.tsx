@@ -56,7 +56,7 @@ export function UpcomingAppointmentsList({
     };
 
     return (
-        <Card className="border-none shadow-xl bg-white/50 backdrop-blur-md rounded-[2rem] overflow-hidden">
+        <Card className="border-none shadow-xl bg-white/50 backdrop-blur-md rounded-[2rem] overflow-visible">
             <CardHeader className="p-8 pb-4">
                 <div className="flex items-center justify-between">
                     <div>
