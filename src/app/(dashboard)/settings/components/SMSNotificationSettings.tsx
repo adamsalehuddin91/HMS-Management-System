@@ -73,8 +73,9 @@ export function SMSNotificationSettings() {
             } else {
                 toast.error(`❌ Webhook gagal: ${result.error}`);
             }
-        } catch (error: any) {
-            toast.error(`❌ Error: ${error.message}`);
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : "Unknown error";
+            toast.error(`❌ Error: ${msg}`);
         } finally {
             setTesting(false);
         }

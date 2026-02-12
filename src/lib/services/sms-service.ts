@@ -72,7 +72,7 @@ export class SMSService {
     static async sendConfirmation(bookingData: NotificationPayload) {
         const settings = await this.getSettings();
         if (!settings || !settings.is_enabled || !settings.confirm_enabled) {
-            console.log("[Notification] Disabled or confirmation not enabled");
+            // [log removed]("[Notification] Disabled or confirmation not enabled");
             return { success: false, reason: 'disabled' };
         }
 
@@ -104,7 +104,7 @@ export class SMSService {
     static async sendReminder(bookingData: NotificationPayload) {
         const settings = await this.getSettings();
         if (!settings || !settings.is_enabled || !settings.reminder_enabled) {
-            console.log("[Notification] Disabled or reminder not enabled");
+            // [log removed]("[Notification] Disabled or reminder not enabled");
             return { success: false, reason: 'disabled' };
         }
 
@@ -140,12 +140,12 @@ export class SMSService {
         type: 'confirmation' | 'reminder'
     ): Promise<{ success: boolean; error?: string }> {
         if (!settings.n8n_webhook_url) {
-            console.warn("[WhatsApp] n8n webhook URL not configured");
+            // [warn removed]("[WhatsApp] n8n webhook URL not configured");
             return { success: false, error: "n8n webhook URL not configured" };
         }
 
         try {
-            console.log(`[WhatsApp] Sending ${type} to ${to}`);
+            // [log removed](`[WhatsApp] Sending ${type} to ${to}`);
 
             const response = await fetch(settings.n8n_webhook_url, {
                 method: 'POST',
@@ -163,15 +163,15 @@ export class SMSService {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error(`[WhatsApp] n8n webhook failed: ${response.status} - ${errorText}`);
+                // [error removed](`[WhatsApp] n8n webhook failed: ${response.status} - ${errorText}`);
                 return { success: false, error: `Webhook failed: ${response.status}` };
             }
 
-            console.log(`[WhatsApp] Successfully sent ${type} notification`);
+            // [log removed](`[WhatsApp] Successfully sent ${type} notification`);
             return { success: true };
-        } catch (error: any) {
-            console.error("[WhatsApp] Error sending message:", error);
-            return { success: false, error: error.message || "Failed to send WhatsApp" };
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : "Failed to send WhatsApp";
+            return { success: false, error: msg };
         }
     }
 
@@ -188,21 +188,21 @@ export class SMSService {
         }
 
         if (!settings.twilio_sid || !settings.twilio_token || !settings.twilio_phone) {
-            console.warn("[SMS] Twilio credentials missing");
+            // [warn removed]("[SMS] Twilio credentials missing");
             return { success: false, error: "Twilio credentials missing" };
         }
 
         try {
-            console.log(`[SMS] Sending to ${to}: ${message.substring(0, 50)}...`);
+            // [log removed](`[SMS] Sending to ${to}: ${message.substring(0, 50)}...`);
 
             // In production, this would call Twilio API
             // For now, we log the message (would need API route for actual Twilio calls)
             // const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${settings.twilio_sid}/Messages.json`;
 
             return { success: true };
-        } catch (error: any) {
-            console.error("[SMS] Error sending:", error);
-            return { success: false, error: error.message };
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : "Failed to send SMS";
+            return { success: false, error: msg };
         }
     }
 
@@ -250,8 +250,9 @@ export class SMSService {
             }
 
             return { success: true };
-        } catch (error: any) {
-            return { success: false, error: error.message };
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : "Webhook test failed";
+            return { success: false, error: msg };
         }
     }
 }

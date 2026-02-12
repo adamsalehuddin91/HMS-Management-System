@@ -1,8 +1,11 @@
 "use client";
 
-import { RotateCcw, Loader2 } from "lucide-react";
-import { Card, CardContent, Badge } from "@/components/ui";
+import { useState } from "react";
+import { RotateCcw, Loader2, FileText, Download, MessageCircle } from "lucide-react";
+import { Card, CardContent, Badge, Button } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+import { downloadReceipt, generateReceipt, generateWhatsAppReceipt, ReceiptData, ReceiptItem } from "@/lib/utils/receipt-generator";
 
 interface RecentTransaction {
     id: string;
@@ -24,6 +27,79 @@ interface RecentTransactionsListProps {
     setShowVoidModal: (show: boolean) => void;
 }
 
+async function fetchReceiptData(saleId: string): Promise<ReceiptData | null> {
+    const supabase = createClient();
+
+    // Fetch sale, items, and business settings in parallel
+    const [saleResult, itemsResult, settingsResult] = await Promise.all([
+        supabase
+            .from("sales")
+            .select("id, total, payment_method, points_redeemed, deposit_deducted, created_at, customer:customers(name, phone)")
+            .eq("id", saleId)
+            .single(),
+        supabase
+            .from("sale_items")
+            .select("item_name, quantity, price, total, item_type, stylist_id")
+            .eq("sale_id", saleId),
+        supabase
+            .from("business_settings")
+            .select("setting_value")
+            .eq("setting_key", "business_info")
+            .single(),
+    ]);
+
+    if (saleResult.error || !saleResult.data) return null;
+
+    const sale = saleResult.data as any;
+    const items = (itemsResult.data || []) as any[];
+    const bizInfo = settingsResult.data?.setting_value as any;
+
+    // Fetch staff names for items that have a stylist
+    const stylistIds = [...new Set(items.map(i => i.stylist_id).filter(Boolean))];
+    let staffMap: Record<string, string> = {};
+    if (stylistIds.length > 0) {
+        const { data: staffData } = await supabase
+            .from("staff")
+            .select("id, name")
+            .in("id", stylistIds);
+        if (staffData) {
+            staffMap = Object.fromEntries(staffData.map(s => [s.id, s.name]));
+        }
+    }
+
+    const receiptItems: ReceiptItem[] = items.map((item) => ({
+        name: item.item_name,
+        quantity: item.quantity,
+        price: item.price,
+        total: item.total,
+        itemType: item.item_type === "product" ? "product" : "service",
+        staffName: item.stylist_id ? staffMap[item.stylist_id] : undefined,
+    }));
+
+    const subtotal = receiptItems.reduce((sum, i) => sum + i.total, 0);
+    const pointsRedeemed = sale.points_redeemed || 0;
+    const pointsDiscount = pointsRedeemed * 0.03; // 1 point = RM0.03
+    const depositDeducted = sale.deposit_deducted || 0;
+
+    return {
+        receiptNo: sale.id.slice(0, 8).toUpperCase(),
+        date: new Date(sale.created_at),
+        businessName: bizInfo?.name || "HMS Salon",
+        businessPhone: bizInfo?.phone || bizInfo?.whatsapp || "-",
+        businessAddress: bizInfo?.address,
+        customerName: sale.customer?.name,
+        customerPhone: sale.customer?.phone,
+        items: receiptItems,
+        subtotal,
+        pointsRedeemed,
+        pointsDiscount,
+        depositDeducted,
+        total: sale.total,
+        paymentMethod: sale.payment_method || "cash",
+        pointsEarned: Math.floor(sale.total),
+    };
+}
+
 export function RecentTransactionsList({
     loading,
     recentTransactions,
@@ -31,6 +107,48 @@ export function RecentTransactionsList({
     setSelectedTransaction,
     setShowVoidModal
 }: RecentTransactionsListProps) {
+    const [loadingReceiptId, setLoadingReceiptId] = useState<string | null>(null);
+    const [receiptMenuId, setReceiptMenuId] = useState<string | null>(null);
+
+    const handleReceiptAction = async (saleId: string, action: "download" | "whatsapp") => {
+        setLoadingReceiptId(saleId);
+        setReceiptMenuId(null);
+        try {
+            const data = await fetchReceiptData(saleId);
+            if (!data) {
+                alert("Gagal mendapatkan data resit.");
+                return;
+            }
+
+            if (action === "download") {
+                downloadReceipt(data);
+            } else {
+                // WhatsApp share
+                const message = generateWhatsAppReceipt(data);
+                const doc = generateReceipt(data);
+                const pdfBlob = doc.output("blob");
+                const file = new File([pdfBlob], `resit-${data.receiptNo}.pdf`, { type: "application/pdf" });
+
+                // @ts-ignore
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: `Resit ${data.receiptNo}`, text: decodeURIComponent(message) });
+                } else {
+                    downloadReceipt(data);
+                    let phone = "";
+                    if (data.customerPhone) {
+                        const raw = data.customerPhone.replace(/\D/g, "");
+                        phone = raw.startsWith("1") ? "60" + raw : raw.startsWith("01") ? "6" + raw : raw;
+                    }
+                    window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
+                }
+            }
+        } catch (error) {
+            console.error("Receipt error:", error);
+            alert("Gagal menjana resit.");
+        } finally {
+            setLoadingReceiptId(null);
+        }
+    };
     return (
         <Card className="border-none shadow-xl bg-white rounded-[2.5rem] overflow-hidden">
             <CardContent className="p-10">
@@ -62,7 +180,46 @@ export function RecentTransactionsList({
                                         </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-6">
+                                <div className="flex items-center gap-4">
+                                    {/* Receipt Actions */}
+                                    {txn.status === "completed" && (
+                                        <div className="relative">
+                                            <button
+                                                onClick={() => setReceiptMenuId(receiptMenuId === txn.fullId ? null : txn.fullId)}
+                                                disabled={loadingReceiptId === txn.fullId}
+                                                className="h-10 w-10 flex items-center justify-center rounded-xl text-[#2e7d32]/40 hover:text-[#2e7d32] hover:bg-[#2e7d32]/10 transition-all active:scale-95"
+                                                title="Resit"
+                                            >
+                                                {loadingReceiptId === txn.fullId ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <FileText className="h-4.5 w-4.5" />
+                                                )}
+                                            </button>
+                                            {receiptMenuId === txn.fullId && (
+                                                <>
+                                                    <div className="fixed inset-0 z-40" onClick={() => setReceiptMenuId(null)} />
+                                                    <div className="absolute right-0 top-12 z-50 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 min-w-[180px]">
+                                                        <button
+                                                            onClick={() => handleReceiptAction(txn.fullId, "download")}
+                                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors text-left"
+                                                        >
+                                                            <Download className="h-4 w-4 text-[#2e7d32]" />
+                                                            <span className="text-xs font-bold text-gray-700">Muat Turun PDF</span>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleReceiptAction(txn.fullId, "whatsapp")}
+                                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors text-left"
+                                                        >
+                                                            <MessageCircle className="h-4 w-4 text-[#25D366]" />
+                                                            <span className="text-xs font-bold text-gray-700">Hantar WhatsApp</span>
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+                                    {/* Void Button */}
                                     {isAdmin && txn.status === "completed" && (
                                         <button
                                             onClick={() => {

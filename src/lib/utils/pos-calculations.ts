@@ -2,14 +2,17 @@ import { formatCurrency } from "@/lib/utils";
 
 // Commission rates based on sharing
 export const COMMISSION_RATES = {
-    // Hairstylist
-    hairstylist_alone: 15,           // Working alone
-    hairstylist_with_hairstylist: 8, // Sharing with another hairstylist
-    hairstylist_with_assistant: 10,  // Sharing with assistant
-    // Assistant
-    assistant_alone: 10,             // Working alone
-    assistant_with_hairstylist: 5,   // Sharing with hairstylist
-    assistant_with_assistant: 10,    // Both assistants: 10% each (as per shared logic)
+    // Hairstylist Services
+    hairstylist_alone: 15,
+    hairstylist_with_hairstylist: 8,
+    hairstylist_with_assistant: 10,
+    // Assistant Services
+    assistant_alone: 10,
+    assistant_with_hairstylist: 5,
+    assistant_with_assistant: 10,
+    // Product Sales
+    product_hairstylist: 15,
+    product_assistant: 10,
 };
 
 export interface StaffMember {
@@ -50,12 +53,16 @@ export const calculateItemCommission = (
 ): { primary: number; secondary: number; primaryRate: number; secondaryRate: number } => {
     const totalPrice = itemPrice * quantity;
 
-    // Products have a flat 5% commission
+    // Products
     if (itemType === 'product') {
+        const rate = primaryStaff.isAssistant
+            ? COMMISSION_RATES.product_assistant
+            : COMMISSION_RATES.product_hairstylist;
+
         return {
-            primary: (totalPrice * 5) / 100,
+            primary: (totalPrice * rate) / 100,
             secondary: 0,
-            primaryRate: 5,
+            primaryRate: rate,
             secondaryRate: 0
         };
     }
@@ -83,7 +90,7 @@ export const calculateItemCommission = (
         primaryRate = COMMISSION_RATES.assistant_with_hairstylist;
         secondaryRate = secondaryStaff.isAssistant
             ? COMMISSION_RATES.assistant_with_assistant
-            : COMMISSION_RATES.hairstylist_with_assistant;
+            : COMMISSION_RATES.hairstylist_with_assistant; // This case might need review if assistant leads and hairstylist assists
     } else {
         // Primary is hairstylist
         if (secondaryStaff.isAssistant) {

@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import type { Product } from "@/types";
 import { inventoryService } from "@/lib/services/inventory-service";
+import { getProductImage } from "@/lib/constants/images";
+import { PRODUCT_CATEGORIES } from "@/lib/constants/categories";
 
 // Sub-components
 import { InventoryStatsHeader } from "./components/InventoryStatsHeader";
@@ -59,7 +61,7 @@ export default function InventoryPage() {
           const threshold = p.low_stock_threshold || 5;
           if (p.stock_quantity === 0) status = 'out_of_stock';
           else if (p.stock_quantity <= threshold) status = 'low_stock';
-          return { ...p, stockLevel: p.stock_quantity, status, price: p.sell_price, image: p.image_url || "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?q=80&w=200&auto=format&fit=crop" };
+          return { ...p, stockLevel: p.stock_quantity, status, price: p.sell_price, image: p.image_url || getProductImage(p.category) };
         }));
       } catch (error) {
         toast.error("Gagal memuatkan produk.");
@@ -74,7 +76,7 @@ export default function InventoryPage() {
   const inventoryValue = products.reduce((sum, p) => sum + (p.price * p.stockLevel), 0);
 
   const categories = ["Semua Kategori", ...Array.from(new Set(products.map(p => p.category).filter(Boolean)))];
-  const productCategories = ["Shampoo", "Conditioner", "Hair Treatment", "Styling", "Skincare", "Tools", "Accessories"];
+  const productCategories = PRODUCT_CATEGORIES;
 
   const filteredProducts = products.filter(p => {
     const matchesCategory = categoryFilter === "Semua Kategori" || p.category === categoryFilter;
@@ -92,7 +94,7 @@ export default function InventoryPage() {
     try {
       const { data, error } = await supabase.from('products').insert({ ...newProduct, is_active: true, created_at: new Date().toISOString() }).select().single();
       if (error) throw error;
-      const mapped: ProductWithUI = { ...data, stockLevel: data.stock_quantity, status: data.stock_quantity === 0 ? 'out_of_stock' : (data.stock_quantity <= data.low_stock_threshold ? 'low_stock' : 'in_stock'), price: data.sell_price, image: data.image_url || "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?q=80&w=200&auto=format&fit=crop" };
+      const mapped: ProductWithUI = { ...data, stockLevel: data.stock_quantity, status: data.stock_quantity === 0 ? 'out_of_stock' : (data.stock_quantity <= data.low_stock_threshold ? 'low_stock' : 'in_stock'), price: data.sell_price, image: data.image_url || getProductImage(data.category) };
       setProducts(prev => [mapped, ...prev]);
       setNewProduct({ name: "", brand: "", category: "Shampoo", sku: "", cost_price: 0, sell_price: 0, stock_quantity: 0, low_stock_threshold: 5 });
       setShowAddModal(false);

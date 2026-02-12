@@ -101,8 +101,8 @@ export default function NewBookingPage() {
         if (!error && data) {
           setCustomers(data);
         }
-      } catch (err) {
-        console.error("Search error:", err);
+      } catch {
+        // Customer search failed - will show empty list
       } finally {
         setSearchingCustomers(false);
       }
@@ -193,8 +193,7 @@ export default function NewBookingPage() {
 
       if (bookingError) throw bookingError;
       setStep("complete");
-    } catch (error) {
-      console.error(error);
+    } catch {
       alert("Failed to create booking");
     } finally {
       setSaving(false);

@@ -134,10 +134,8 @@ export default function ReportsPage() {
       setRecentTransactions(prev => prev.map(txn => txn.fullId === selectedTransaction.fullId ? { ...txn, status: 'voided' } : txn));
       setShowVoidModal(false);
       toast.success("Transaksi berjaya dibatalkan!");
-    } catch (error: any) {
-      console.error("Void transaction full error object:", JSON.stringify(error, null, 2));
-      console.error("Void transaction error details:", error);
-      const errorMsg = error.message || error.details || "Gagal batalkan transaksi.";
+    } catch (error: unknown) {
+      const errorMsg = error instanceof Error ? error.message : "Gagal batalkan transaksi.";
       toast.error(`Ralat: ${errorMsg}`);
     }
     finally { setVoidingTransaction(false); }

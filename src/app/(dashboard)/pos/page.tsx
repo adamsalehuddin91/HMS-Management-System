@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/header";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { motion, AnimatePresence } from "framer-motion";
+import { SERVICE_CATEGORIES } from "@/lib/constants/categories";
 import {
   CartItem,
   StaffMember,
@@ -74,7 +75,7 @@ export default function POSPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastSaleId, setLastSaleId] = useState<string | null>(null);
   const [searchingCustomers, setSearchingCustomers] = useState(false);
-  const [customers, setCustomers] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<{ id: string; name: string; phone: string; points_balance: number; is_member: boolean }[]>([]);
 
   // Add Customer Modal
   const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
@@ -110,11 +111,11 @@ export default function POSPage() {
     return () => clearTimeout(searchTimer);
   }, [searchCustomer]);
 
-  // Dynamic categories from loaded services
-  const categories = ["All", ...Array.from(new Set(services.map((s: any) => s.category).filter(Boolean)))];
+  // Use standardized categories for consistency with Services page
+  const categories = ["All", ...SERVICE_CATEGORIES];
 
   // Filter services by category and search
-  const filteredServices = services.filter((service: any) => {
+  const filteredServices = services.filter((service) => {
     const matchesCategory = selectedCategory === "All" || service.category === selectedCategory;
     const matchesSearch = service.name.toLowerCase().includes(searchService.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -162,8 +163,7 @@ export default function POSPage() {
       setShowAddCustomerModal(false);
       setShowCustomerDropdown(false);
       setSearchCustomer("");
-    } catch (error) {
-      console.error("Error adding customer:", error);
+    } catch {
       alert("Failed to add customer. Please try again.");
     } finally {
       setSavingCustomer(false);
@@ -177,8 +177,9 @@ export default function POSPage() {
       setLastSaleId(saleId);
       setShowPaymentModal(false);
       setShowSuccessModal(true);
-    } catch (error: any) {
-      alert(`Failed to complete sale: ${error?.message || 'Unknown error'}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Failed to complete sale: ${msg}`);
     } finally {
       setSavingSale(false);
     }
@@ -186,6 +187,7 @@ export default function POSPage() {
 
   const handleNewSale = () => {
     clearCart();
+    setLastSaleId(null);
     setShowSuccessModal(false);
   };
 
@@ -277,7 +279,7 @@ export default function POSPage() {
             staff={staff}
             saleId={lastSaleId}
             businessInfo={businessInfo}
-            handleNewSale={clearCart}
+            handleNewSale={handleNewSale}
             router={router}
           />
         )}

@@ -1,6 +1,13 @@
 import { jsPDF } from "jspdf";
 import { format } from "date-fns";
 
+// Add missing type definition for setLineDash
+declare module "jspdf" {
+  interface jsPDF {
+    setLineDash(dashArray: number[], dashPhase: number): jsPDF;
+  }
+}
+
 export interface ReceiptItem {
   name: string;
   quantity: number;
@@ -37,17 +44,21 @@ export interface ReceiptData {
 export function generateReceipt(data: ReceiptData): jsPDF {
   // 58mm width, variable height (will auto-extend)
   const pageWidth = 58;
-  const margin = 3;
+  const margin = 4; // Increased margin for frame
   const contentWidth = pageWidth - (margin * 2);
+
+  // Calculate estimated height to set initial canvas
+  // Base height (header + footer) + items * estimated_item_height
+  const estimatedHeight = 150 + (data.items.length * 10);
 
   // Create PDF with custom size
   const doc = new jsPDF({
     orientation: "portrait",
     unit: "mm",
-    format: [pageWidth, 200], // Height will be trimmed
+    format: [pageWidth, estimatedHeight],
   });
 
-  let y = 5; // Starting Y position
+  let y = 6; // Starting Y position inside frame
   const lineHeight = 4;
   const smallLineHeight = 3;
 
@@ -63,31 +74,31 @@ export function generateReceipt(data: ReceiptData): jsPDF {
   const leftText = (text: string, fontSize: number, bold = false) => {
     doc.setFontSize(fontSize);
     doc.setFont("helvetica", bold ? "bold" : "normal");
-    doc.text(text, margin, y);
-    y += fontSize > 8 ? lineHeight : smallLineHeight;
+    doc.text(text, margin + 1, y); // +1 padding from frame
   };
 
   const rightText = (text: string, fontSize: number) => {
     doc.setFontSize(fontSize);
     doc.setFont("helvetica", "normal");
     const textWidth = doc.getTextWidth(text);
-    doc.text(text, pageWidth - margin - textWidth, y);
+    doc.text(text, pageWidth - margin - 1 - textWidth, y); // -1 padding from frame
   };
 
-  const leftRightText = (left: string, right: string, fontSize: number, leftBold = false) => {
+  const leftRightText = (left: string, right: string, fontSize: number, leftBold = false, rightBold = false) => {
     doc.setFontSize(fontSize);
     doc.setFont("helvetica", leftBold ? "bold" : "normal");
-    doc.text(left, margin, y);
-    doc.setFont("helvetica", "normal");
+    doc.text(left, margin + 1, y);
+
+    doc.setFont("helvetica", rightBold ? "bold" : "normal");
     const rightWidth = doc.getTextWidth(right);
-    doc.text(right, pageWidth - margin - rightWidth, y);
+    doc.text(right, pageWidth - margin - 1 - rightWidth, y);
     y += fontSize > 8 ? lineHeight : smallLineHeight;
   };
 
-  const dashedLine = () => {
+  const drawDashedLine = () => {
     doc.setFontSize(6);
     doc.setFont("helvetica", "normal");
-    const dashes = "-".repeat(40);
+    const dashes = "- ".repeat(25);
     const textWidth = doc.getTextWidth(dashes);
     doc.text(dashes, (pageWidth - textWidth) / 2, y);
     y += smallLineHeight;
@@ -99,14 +110,15 @@ export function generateReceipt(data: ReceiptData): jsPDF {
 
   // === RECEIPT CONTENT ===
 
-  // Business Header
-  centerText(data.businessName.toUpperCase(), 10, true);
+  // 1. Business Header
+  y += 2;
+  centerText(data.businessName.toUpperCase(), 9, true);
   y += 1;
 
   if (data.businessAddress) {
     // Split long address into lines
     doc.setFontSize(6);
-    const addressLines = doc.splitTextToSize(data.businessAddress, contentWidth);
+    const addressLines = doc.splitTextToSize(data.businessAddress, contentWidth - 2);
     addressLines.forEach((line: string) => {
       centerText(line, 6);
     });
@@ -115,33 +127,42 @@ export function generateReceipt(data: ReceiptData): jsPDF {
   centerText(`Tel: ${data.businessPhone}`, 6);
   y += 2;
 
-  // Receipt Info
-  dashedLine();
+  // 2. Receipt Title & Info
+  drawDashedLine();
   centerText("RESIT JUALAN", 8, true);
-  centerText("SALES RECEIPT", 6);
-  dashedLine();
-
-  // Receipt details
-  leftRightText("No:", data.receiptNo, 7);
-  leftRightText("Tarikh:", format(data.date, "dd/MM/yyyy"), 7);
-  leftRightText("Masa:", format(data.date, "HH:mm"), 7);
-
-  if (data.customerName) {
-    leftRightText("Pelanggan:", "", 7);
-    leftText(data.customerName, 7, true);
-  }
+  // centerText("SALES RECEIPT", 5); // Optional: reduce height
 
   y += 1;
-  dashedLine();
+  const dateStr = format(data.date, "dd/MM/yyyy");
+  const timeStr = format(data.date, "HH:mm");
 
-  // Items Header
-  leftText("ITEM", 6, true);
-  y -= smallLineHeight;
-  rightText("JUMLAH", 6);
+  leftRightText("No:", data.receiptNo, 7);
+  leftRightText("Tarikh:", `${dateStr} ${timeStr}`, 7);
+
+  if (data.customerName) {
+    y += 1;
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "normal");
+    doc.text("Pelanggan:", margin + 1, y);
+    y += smallLineHeight;
+    doc.setFont("helvetica", "bold");
+    doc.text(data.customerName, margin + 1, y);
+    y += smallLineHeight + 1;
+  } else {
+    y += 2;
+  }
+
+  // 3. Items Header
+  drawDashedLine();
+  doc.setFontSize(6);
+  doc.setFont("helvetica", "bold");
+  doc.text("BUTIRAN", margin + 1, y);
+  const totalLabelWidth = doc.getTextWidth("JUMLAH");
+  doc.text("JUMLAH", pageWidth - margin - 1 - totalLabelWidth, y);
   y += smallLineHeight;
-  dashedLine();
+  drawDashedLine();
 
-  // Items
+  // 4. Items List
   data.items.forEach((item) => {
     // Item name (may wrap)
     doc.setFontSize(7);
@@ -149,93 +170,146 @@ export function generateReceipt(data: ReceiptData): jsPDF {
 
     const itemLabel = item.itemType === 'product' ? '[P] ' : '';
     const itemName = `${itemLabel}${item.name}`;
-    const nameLines = doc.splitTextToSize(itemName, contentWidth - 15);
 
-    nameLines.forEach((line: string, index: number) => {
-      doc.text(line, margin, y);
-      if (index === 0) {
-        // Price on first line
-        const priceText = formatCurrency(item.total);
-        const priceWidth = doc.getTextWidth(priceText);
-        doc.text(priceText, pageWidth - margin - priceWidth, y);
+    // Calculate space for price column (approx 15mm)
+    const maxNameWidth = contentWidth - 15;
+    const nameLines = doc.splitTextToSize(itemName, maxNameWidth);
+
+    // Print first line with price
+    doc.text(nameLines[0], margin + 1, y);
+
+    const priceText = formatCurrency(item.total);
+    doc.setFont("helvetica", "bold");
+    const priceWidth = doc.getTextWidth(priceText);
+    doc.text(priceText, pageWidth - margin - 1 - priceWidth, y);
+    y += smallLineHeight;
+
+    // Additional lines for long names
+    if (nameLines.length > 1) {
+      doc.setFont("helvetica", "normal");
+      for (let i = 1; i < nameLines.length; i++) {
+        doc.text(nameLines[i], margin + 1, y);
+        y += smallLineHeight;
       }
-      y += smallLineHeight;
-    });
-
-    // Quantity and unit price
-    doc.setFontSize(6);
-    doc.setTextColor(100);
-    const qtyText = `  ${item.quantity} x ${formatCurrency(item.price)}`;
-    doc.text(qtyText, margin, y);
-
-    // Staff name if service
-    if (item.staffName) {
-      const staffText = `(${item.staffName})`;
-      const staffWidth = doc.getTextWidth(staffText);
-      doc.text(staffText, pageWidth - margin - staffWidth, y);
     }
-    doc.setTextColor(0);
-    y += smallLineHeight + 1;
+
+    // Quantity and unit price details
+    doc.setFontSize(6);
+    doc.setTextColor(80); // Gray text
+
+    let detailText = `${item.quantity} x ${formatCurrency(item.price)}`;
+    if (item.staffName) {
+      detailText += ` (${item.staffName})`;
+    }
+
+    doc.text(detailText, margin + 1, y);
+    doc.setTextColor(0); // Reset black
+    y += smallLineHeight + 2; // Extra spacing between items
   });
 
-  dashedLine();
+  y += 1;
+  drawDashedLine();
 
-  // Totals
+  // 5. Totals
+  y += 1;
   leftRightText("Jumlah Kecil:", formatCurrency(data.subtotal), 7);
 
   if (data.pointsDiscount > 0) {
-    leftRightText(`Tolak Mata (${data.pointsRedeemed} pts):`, `-${formatCurrency(data.pointsDiscount)}`, 7);
+    leftRightText(`Mata (${data.pointsRedeemed}):`, `-${formatCurrency(data.pointsDiscount)}`, 7);
   }
 
   if (data.depositDeducted > 0) {
-    leftRightText("Tolak Deposit:", `-${formatCurrency(data.depositDeducted)}`, 7);
+    leftRightText("Deposit:", `-${formatCurrency(data.depositDeducted)}`, 7);
   }
 
-  dashedLine();
+  y += 1;
+  // Grand Total Box
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.1);
+  // doc.rect(margin, y - 1, contentWidth, 7); // Optional box around total
 
-  // Grand Total
-  doc.setFontSize(9);
+  doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text("JUMLAH", margin, y);
-  const totalText = formatCurrency(data.total);
-  const totalWidth = doc.getTextWidth(totalText);
-  doc.text(totalText, pageWidth - margin - totalWidth, y);
-  y += lineHeight + 1;
+  // Cleaned up overlapping text issue
+  doc.text("JUMLAH BESAR", margin + 1, y + 4);
 
-  dashedLine();
+  const finalTotal = formatCurrency(data.total);
+  const finalTotalWidth = doc.getTextWidth(finalTotal);
+  doc.text(finalTotal, pageWidth - margin - 1 - finalTotalWidth, y + 4);
+  y += 9;
 
-  // Payment Info
-  leftRightText("Bayaran:", data.paymentMethod.toUpperCase(), 7);
+  drawDashedLine();
+
+  // 6. Payment Info
+  y += 1;
+  leftRightText("Kaedah Bayaran:", data.paymentMethod.toUpperCase(), 7);
 
   if (data.cashReceived && data.cashReceived > data.total) {
-    leftRightText("Diterima:", formatCurrency(data.cashReceived), 7);
-    leftRightText("Baki:", formatCurrency(data.change || 0), 7);
+    leftRightText("Tunai Diterima:", formatCurrency(data.cashReceived), 7);
+    leftRightText("Baki:", formatCurrency(data.change || 0), 7, false, true);
   }
 
-  // Points earned
+  // 7. Points Earned
   if (data.pointsEarned > 0 && data.customerName) {
-    y += 1;
-    dashedLine();
-    centerText(`★ Mata Diperoleh: +${data.pointsEarned} pts ★`, 7, true);
+    y += 3;
+    doc.setLineWidth(0.1);
+    doc.setLineDash([1, 1], 0);
+    doc.rect(margin + 4, y, contentWidth - 8, 8);
+    y += 5;
+    centerText(`+${data.pointsEarned} Mata Ganjaran`, 7, true);
+    doc.setLineDash([], 0); // Reset dash
+    y += 4;
   }
 
-  y += 2;
-  dashedLine();
-
-  // Footer
+  // 8. Footer
+  y += 4;
   centerText("Terima Kasih!", 8, true);
-  centerText("Thank You For Your Visit", 6);
-  y += 2;
-  centerText("Sila simpan resit ini", 5);
-  centerText("Please keep this receipt", 5);
+  centerText("Sila Datang Lagi", 6);
 
-  y += 3;
-
-  // Timestamp
+  y += 4;
+  // Timestamp footer
   doc.setFontSize(5);
   doc.setTextColor(150);
-  centerText(`Dicetak: ${format(new Date(), "dd/MM/yyyy HH:mm:ss")}`, 5);
-  doc.setTextColor(0);
+  centerText(`${format(new Date(), "dd/MM/yyyy HH:mm:ss")}`, 5);
+
+  // ADD FRAME
+  // Finally, draw the frame around the entire used content area
+  // We use the current 'y' to determine height
+  const frameHeight = y + 3; // + padding bottom
+
+  // Re-init doc if one page is enough (usually is for thermal receipts)
+  // Actually jsPDF adds pages automatically if we overflow, but for thermal we want one long page.
+  // The initial estimatedHeight might be too short or too long. 
+  // There isn't a perfect way to resize a page in jsPDF after content creation easily without plugins.
+  // However, we can just draw the rect on the pages that exist.
+
+  // Assuming single page for thermal receipt usually
+  doc.setLineWidth(0.3);
+  doc.setDrawColor(0);
+  doc.rect(margin, 2, contentWidth, frameHeight - 4); // x, y, w, h
+
+  // Decorative corners (inner)
+  const cornerSize = 2;
+  const innerMargin = margin + 1.5;
+  const innerW = contentWidth - 3;
+  const innerH = frameHeight - 7;
+  const topY = 3.5;
+
+  // Small aesthetic inner corners
+  doc.setLineWidth(0.1);
+  // Top-Left
+  doc.line(innerMargin, topY + cornerSize, innerMargin, topY);
+  doc.line(innerMargin, topY, innerMargin + cornerSize, topY);
+  // Top-Right
+  doc.line(innerMargin + innerW - cornerSize, topY, innerMargin + innerW, topY);
+  doc.line(innerMargin + innerW, topY, innerMargin + innerW, topY + cornerSize);
+  // Bottom-Left
+  doc.line(innerMargin, topY + innerH - cornerSize, innerMargin, topY + innerH);
+  doc.line(innerMargin, topY + innerH, innerMargin + cornerSize, topY + innerH);
+  // Bottom-Right
+  doc.line(innerMargin + innerW - cornerSize, topY + innerH, innerMargin + innerW, topY + innerH);
+  doc.line(innerMargin + innerW, topY + innerH, innerMargin + innerW, topY + innerH - cornerSize);
+
 
   return doc;
 }
@@ -257,4 +331,34 @@ export function printReceipt(data: ReceiptData): void {
   const pdfBlob = doc.output("blob");
   const pdfUrl = URL.createObjectURL(pdfBlob);
   window.open(pdfUrl, "_blank");
+}
+
+/**
+ * Generate WhatsApp formatted receipt text
+ */
+export function generateWhatsAppReceipt(data: ReceiptData): string {
+  const itemsList = data.items.map(item => {
+    return `• ${item.name} x${item.quantity} - RM${item.total.toFixed(2)}`;
+  }).join('\n');
+
+  const totalSection = [
+    `Jumlah: RM${data.total.toFixed(2)}`,
+    data.pointsDiscount > 0 ? `Diskaun Mata: -RM${data.pointsDiscount.toFixed(2)}` : '',
+    data.depositDeducted > 0 ? `Deposit: -RM${data.depositDeducted.toFixed(2)}` : '',
+    `Bayaran: ${data.paymentMethod.toUpperCase()}`
+  ].filter(Boolean).join('\n');
+
+  const message = `*RESIT PEMBAYARAN - ${data.businessName.toUpperCase()}*
+Tarikh: ${format(data.date, "dd/MM/yyyy HH:mm")}
+No. Resit: ${data.receiptNo}
+--------------------------------
+*ITEM:*
+${itemsList}
+--------------------------------
+${totalSection}
+
+*Terima kasih!*
+Sila simpan resit ini sebagai rujukan.`;
+
+  return encodeURIComponent(message);
 }

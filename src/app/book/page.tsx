@@ -37,7 +37,7 @@ export default function CustomerBookingPage() {
   // Data states
   const [services, setServices] = useState<Service[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
-  const [existingBookings, setExistingBookings] = useState<any[]>([]);
+  const [existingBookings, setExistingBookings] = useState<{ start_time: string; end_time: string; staff_id: string }[]>([]);
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo>({
     name: "HMS Salon",
     phone: "+60 12-345 6789",
@@ -234,9 +234,9 @@ export default function CustomerBookingPage() {
       setBookingId(result.bookingId.slice(0, 8).toUpperCase());
       setStep("success");
 
-    } catch (error: any) {
-      console.error("Booking error:", error);
-      alert(`Booking failed: ${error.message || 'Unknown error'}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Booking failed: ${msg}`);
     } finally {
       setSaving(false);
     }

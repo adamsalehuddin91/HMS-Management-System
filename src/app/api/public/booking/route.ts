@@ -1,16 +1,112 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { NotificationService } from "@/lib/services/notification-service";
 import { createClient } from "@supabase/supabase-js";
 
+// Zod schema for booking validation
+const bookingSchema = z.object({
+  customerName: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be under 100 characters")
+    .trim(),
+  customerPhone: z
+    .string()
+    .regex(/^[\d\s+\-()]{8,20}$/, "Invalid phone number format")
+    .trim(),
+  customerNotes: z
+    .string()
+    .max(500, "Notes must be under 500 characters")
+    .optional()
+    .default(""),
+  serviceId: z.string().uuid("Invalid service ID"),
+  staffId: z.string().uuid("Invalid staff ID").optional().nullable(),
+  bookingDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD format"),
+  startTime: z
+    .string()
+    .regex(/^\d{2}:\d{2}(:\d{2})?$/, "Time must be HH:MM format"),
+  endTime: z
+    .string()
+    .regex(/^\d{2}:\d{2}(:\d{2})?$/, "Time must be HH:MM format")
+    .optional(),
+});
+
 // Use service role for public bookings (bypasses RLS)
+// SERVICE_ROLE_KEY is required - do not fall back to anon key
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!serviceRoleKey) {
+  console.error("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is not configured");
+}
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+/**
+ * Validate request origin to prevent CSRF attacks.
+ * Allows requests from same origin and configured allowed origins.
+ */
+function validateOrigin(request: NextRequest): boolean {
+  const origin = request.headers.get("origin");
+  const referer = request.headers.get("referer");
+  const host = request.headers.get("host");
+
+  // Allow server-side requests (no origin header)
+  if (!origin && !referer) return true;
+
+  // Build allowed origins list
+  const allowedOrigins: string[] = [];
+  if (host) {
+    allowedOrigins.push(`https://${host}`, `http://${host}`);
+  }
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    allowedOrigins.push(process.env.NEXT_PUBLIC_APP_URL);
+  }
+  // Always allow localhost in development
+  if (process.env.NODE_ENV === "development") {
+    allowedOrigins.push("http://localhost:3000", "http://localhost:3001");
+  }
+
+  if (origin && allowedOrigins.some((allowed) => origin.startsWith(allowed))) {
+    return true;
+  }
+  if (referer && allowedOrigins.some((allowed) => referer.startsWith(allowed))) {
+    return true;
+  }
+
+  return false;
+}
 
 export async function POST(request: NextRequest) {
   try {
+    // CSRF protection: validate request origin
+    if (!validateOrigin(request)) {
+      return NextResponse.json(
+        { error: "Forbidden: invalid request origin" },
+        { status: 403 }
+      );
+    }
+
+    // Warn if service role key is missing (use anon key as degraded fallback)
+    if (!serviceRoleKey) {
+      console.error("WARNING: Using anon key for booking - configure SUPABASE_SERVICE_ROLE_KEY");
+    }
+
     const body = await request.json();
+
+    // Validate input with Zod
+    const result = bookingSchema.safeParse(body);
+    if (!result.success) {
+      const errors = result.error.issues.map((i) => i.message);
+      return NextResponse.json(
+        { error: "Validation failed", details: errors },
+        { status: 400 }
+      );
+    }
+
     const {
       customerName,
       customerPhone,
@@ -20,23 +116,15 @@ export async function POST(request: NextRequest) {
       bookingDate,
       startTime,
       endTime,
-    } = body;
+    } = result.data;
 
-    // Validate required fields
-    if (!customerName || !customerPhone || !serviceId || !bookingDate || !startTime) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    // Check if customer exists
+    // Check if customer exists (use maybeSingle to avoid error on 0 results)
     let customerId: string;
     const { data: existingCustomer } = await supabaseAdmin
       .from("customers")
       .select("id")
       .eq("phone", customerPhone)
-      .single();
+      .maybeSingle();
 
     if (existingCustomer) {
       customerId = existingCustomer.id;
@@ -55,13 +143,29 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (customerError) {
-        console.error("Customer creation error:", customerError);
         return NextResponse.json(
-          { error: `Failed to create customer: ${customerError.message}` },
+          { error: "Failed to create customer" },
           { status: 500 }
         );
       }
       customerId = newCustomer.id;
+    }
+
+    // Check for duplicate booking (same customer + date + time)
+    const { data: duplicateBooking } = await supabaseAdmin
+      .from("bookings")
+      .select("id")
+      .eq("customer_id", customerId)
+      .eq("booking_date", bookingDate)
+      .eq("start_time", startTime)
+      .in("status", ["pending", "confirmed"])
+      .maybeSingle();
+
+    if (duplicateBooking) {
+      return NextResponse.json(
+        { error: "A booking already exists for this date and time" },
+        { status: 409 }
+      );
     }
 
     // Create booking
@@ -83,14 +187,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (bookingError) {
-      console.error("Booking creation error:", bookingError);
       return NextResponse.json(
-        { error: `Failed to create booking: ${bookingError.message}` },
+        { error: "Failed to create booking" },
         { status: 500 }
       );
     }
 
-    // Send WhatsApp/SMS Confirmation (Optional/Background)
+    // Send notification (non-blocking - don't fail booking if this fails)
     try {
       const { data: serviceData } = await supabaseAdmin
         .from("services")
@@ -99,19 +202,17 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (serviceData) {
-        const notificationResult = await NotificationService.sendConfirmation({
+        await NotificationService.sendConfirmation({
           customerName,
           customerPhone,
           serviceName: serviceData.name,
           date: bookingDate,
           time: startTime,
-          bookingId: booking.id
+          bookingId: booking.id,
         });
-        console.log("[Booking] Notification result:", notificationResult);
       }
-    } catch (notificationError) {
-      console.error("Notification failed:", notificationError);
-      // Don't fail the booking if notification fails
+    } catch {
+      // Non-critical: notification failure doesn't affect booking
     }
 
     return NextResponse.json({
@@ -119,10 +220,9 @@ export async function POST(request: NextRequest) {
       bookingId: booking.id,
       message: "Booking created successfully",
     });
-  } catch (error: any) {
-    console.error("API error:", error);
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: error.message || "Internal server error" },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }

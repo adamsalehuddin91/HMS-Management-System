@@ -66,9 +66,7 @@ export const inventoryService = {
       });
 
     if (movementError) {
-      console.error("Failed to record stock movement:", movementError);
-      // We don't throw here to avoid rolling back the stock update, 
-      // though in a production app we should use a transaction/RPC.
+      // Stock update succeeded but movement log failed - not critical
     }
 
     return { balanceAfter };

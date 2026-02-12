@@ -28,7 +28,9 @@ export function InventoryHistoryTab() {
     const [filterDateTo, setFilterDateTo] = useState("");
 
     useEffect(() => {
-        inventoryService.getProductList().then(setProducts).catch(() => { });
+        inventoryService.getProductList().then(setProducts).catch(() => {
+            // Non-critical: filter dropdown will just be empty
+        });
     }, []);
 
     const fetchHistory = useCallback(async () => {
@@ -44,8 +46,8 @@ export function InventoryHistoryTab() {
             });
             setHistory(data);
             setTotal(count);
-        } catch (error) {
-            console.error("Failed to fetch history:", error);
+        } catch {
+            // History fetch failed - loading state will clear
         }
         setLoading(false);
     }, [page, filterProduct, filterType, filterDateFrom, filterDateTo]);

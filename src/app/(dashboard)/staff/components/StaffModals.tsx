@@ -4,28 +4,55 @@ import { X, Loader2, TrendingUp, TrendingDown, Minus, Plus } from "lucide-react"
 import { Button, Card, CardContent, Input } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 
+interface StaffFormData {
+    id?: string;
+    name: string;
+    phone: string;
+    email: string;
+    role: string;
+}
+
+interface CommissionAdjustment {
+    type: "bonus" | "deduction";
+    amount: number;
+    reason: string;
+}
+
+interface SelectedStaffInfo {
+    id: string;
+    name: string;
+    commission: number;
+}
+
+interface CommissionHistoryEntry {
+    id: string;
+    amount: number;
+    type: string;
+    created_at: string;
+}
+
 interface StaffModalsProps {
     showAddModal: boolean;
     setShowAddModal: (show: boolean) => void;
-    newStaff: any;
-    setNewStaff: (staff: any) => void;
+    newStaff: StaffFormData;
+    setNewStaff: (staff: StaffFormData) => void;
     savingStaff: boolean;
     handleAddStaff: () => void;
 
     showEditModal: boolean;
     setShowEditModal: (show: boolean) => void;
-    editStaff: any;
-    setEditStaff: (staff: any) => void;
+    editStaff: StaffFormData;
+    setEditStaff: (staff: StaffFormData) => void;
     handleEditStaff: () => void;
 
     showCommissionModal: boolean;
     setShowCommissionModal: (show: boolean) => void;
-    commissionAdjustment: any;
-    setCommissionAdjustment: (adj: any) => void;
+    commissionAdjustment: CommissionAdjustment;
+    setCommissionAdjustment: (adj: CommissionAdjustment) => void;
     savingCommission: boolean;
     handleCommissionAdjustment: () => void;
-    commissionHistory: any[];
-    selectedStaff: any;
+    commissionHistory: CommissionHistoryEntry[];
+    selectedStaff: SelectedStaffInfo | null;
 }
 
 export function StaffModals({
@@ -198,6 +225,8 @@ export function StaffModals({
                                 >
                                     <option>Stylist</option>
                                     <option>Senior Stylist</option>
+                                    <option>Hairstylist</option>
+                                    <option>Assistant Hairstylist</option>
                                     <option>Therapist</option>
                                     <option>Receptionist</option>
                                     <option>Manager</option>

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Check, Plus, ArrowLeft, Download, Loader2 } from "lucide-react";
+import { Check, Plus, ArrowLeft, Download, Loader2, MessageCircle } from "lucide-react";
 import { Button, Card, CardContent } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { CartItem, StaffMember, getCommissionBreakdown } from "@/lib/utils/pos-calculations";
-import { downloadReceipt, ReceiptData, ReceiptItem } from "@/lib/utils/receipt-generator";
+import { downloadReceipt, generateWhatsAppReceipt, generateReceipt, ReceiptData, ReceiptItem } from "@/lib/utils/receipt-generator";
 
 interface SuccessModalProps {
     total: number;
@@ -50,44 +50,103 @@ export function SuccessModal({
     const totalCommission = commissionBreakdown.reduce((sum, i) => sum + i.amount, 0);
     const receiptNo = saleId.slice(0, 8).toUpperCase();
 
-    const handleDownloadReceipt = async () => {
+    // Memoize receipt data so it can be reused
+    const receiptData: ReceiptData = useMemo(() => {
+        const receiptItems: ReceiptItem[] = cart.map(item => {
+            const primaryStaff = staff.find(s => s.id === item.primaryStaffId);
+            return {
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                total: item.price * item.quantity,
+                itemType: item.itemType,
+                staffName: primaryStaff?.name
+            };
+        });
+
+        return {
+            receiptNo,
+            date: new Date(),
+            businessName: businessInfo.name || "HMS Salon",
+            businessPhone: businessInfo.phone || "-",
+            businessAddress: businessInfo.address,
+            customerName: selectedCustomer?.name,
+            customerPhone: selectedCustomer?.phone,
+            items: receiptItems,
+            subtotal,
+            pointsRedeemed,
+            pointsDiscount,
+            depositDeducted,
+            total,
+            paymentMethod,
+            pointsEarned
+        };
+    }, [
+        cart, staff, receiptNo, businessInfo, selectedCustomer,
+        subtotal, pointsRedeemed, pointsDiscount, depositDeducted,
+        total, paymentMethod, pointsEarned
+    ]);
+
+    const handleDownloadReceipt = () => {
         setDownloading(true);
         try {
-            // Map cart items to receipt items
-            const receiptItems: ReceiptItem[] = cart.map(item => {
-                const primaryStaff = staff.find(s => s.id === item.primaryStaffId);
-                return {
-                    name: item.name,
-                    quantity: item.quantity,
-                    price: item.price,
-                    total: item.price * item.quantity,
-                    itemType: item.itemType,
-                    staffName: primaryStaff?.name
-                };
-            });
-
-            const receiptData: ReceiptData = {
-                receiptNo,
-                date: new Date(),
-                businessName: businessInfo.name || "HMS Salon",
-                businessPhone: businessInfo.phone || "-",
-                businessAddress: businessInfo.address,
-                customerName: selectedCustomer?.name,
-                customerPhone: selectedCustomer?.phone,
-                items: receiptItems,
-                subtotal,
-                pointsRedeemed,
-                pointsDiscount,
-                depositDeducted,
-                total,
-                paymentMethod,
-                pointsEarned
-            };
-
             downloadReceipt(receiptData);
         } catch (error) {
             console.error("Failed to generate receipt:", error);
             alert("Gagal menjana resit. Sila cuba lagi.");
+        } finally {
+            setDownloading(false);
+        }
+    };
+
+    const handleWhatsAppReceipt = async () => {
+        const message = generateWhatsAppReceipt(receiptData);
+        let phone = "";
+
+        // Try to use customer phone if available
+        if (selectedCustomer?.phone) {
+            // Remove non-digit chars
+            const rawPhone = selectedCustomer.phone.replace(/\D/g, "");
+            // Ensure 60 prefix for Malaysia if starting with 1
+            if (rawPhone.startsWith("1")) {
+                phone = "60" + rawPhone;
+            } else if (rawPhone.startsWith("01")) {
+                phone = "6" + rawPhone;
+            } else {
+                phone = rawPhone;
+            }
+        }
+
+        setDownloading(true);
+        try {
+            // Generate PDF Blob
+            const doc = generateReceipt(receiptData);
+            const pdfBlob = doc.output('blob');
+            const file = new File([pdfBlob], `resit-${receiptData.receiptNo}.pdf`, { type: "application/pdf" });
+
+            // Check if Web Share API is supported and can share files
+            // @ts-ignore - navigator.share / canShare types might be missing in some setups
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: `Resit ${receiptData.receiptNo}`,
+                    text: message,
+                });
+            } else {
+                // Fallback: Download PDF & Open WhatsApp
+                downloadReceipt(receiptData);
+
+                // Construct WhatsApp URL
+                const url = `https://wa.me/${phone}?text=${message}`;
+                window.open(url, "_blank");
+
+                alert("Resit telah dimuat turun. Sila lampirkan PDF secara manual di WhatsApp.");
+            }
+        } catch (error) {
+            console.error("Error sharing receipt:", error);
+            // Fallback on error too
+            const url = `https://wa.me/${phone}?text=${message}`;
+            window.open(url, "_blank");
         } finally {
             setDownloading(false);
         }
@@ -212,6 +271,15 @@ export function SuccessModal({
                                     Exit to Dashboard
                                 </Button>
                             </div>
+
+                            <Button
+                                className="w-full h-11 md:h-12 rounded-2xl bg-[#25D366] hover:bg-[#128C7E] text-white font-bold uppercase tracking-widest text-[11px] transition-all shadow-lg shadow-[#25D366]/20 mt-2"
+                                onClick={handleWhatsAppReceipt}
+                            >
+                                <MessageCircle className="h-4 w-4 mr-2" />
+                                Hantar WhatsApp
+                            </Button>
+
                         </div>
                     </CardContent>
                 </Card>

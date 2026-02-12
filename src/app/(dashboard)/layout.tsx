@@ -19,7 +19,7 @@ export default function DashboardLayout({
     setIsHydrated(true);
   }, []);
 
-  // Redirect if not authenticated after hydration and loading check
+  // Client-side fallback guard (server middleware is primary protection)
   useEffect(() => {
     if (isHydrated && !isLoading && !isAuthenticated) {
       router.replace("/login");
@@ -35,7 +35,7 @@ export default function DashboardLayout({
     );
   }
 
-  // Redirect in progress or authenticating - show nothing to avoid flash
+  // Client-side fallback - middleware handles this server-side
   if (!isAuthenticated || !user) {
     return null;
   }

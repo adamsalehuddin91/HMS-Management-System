@@ -90,7 +90,6 @@ export class NotificationService {
         const settings = await this.getSettings();
 
         if (!settings.is_enabled || !settings.confirm_enabled) {
-            console.log("[Notification] Disabled or confirmation not enabled");
             return { success: false, error: 'disabled' };
         }
 
@@ -123,7 +122,6 @@ export class NotificationService {
         const settings = await this.getSettings();
 
         if (!settings.is_enabled || !settings.reminder_enabled) {
-            console.log("[Notification] Disabled or reminder not enabled");
             return { success: false, error: 'disabled' };
         }
 
@@ -159,8 +157,6 @@ export class NotificationService {
         type: 'confirmation' | 'reminder'
     ): Promise<{ success: boolean; error?: string }> {
         try {
-            console.log(`[WhatsApp] Sending ${type} to ${to}`);
-
             const response = await fetch(webhookUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -174,16 +170,13 @@ export class NotificationService {
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error(`[WhatsApp] Webhook failed: ${response.status} - ${errorText}`);
                 return { success: false, error: `Webhook failed: ${response.status}` };
             }
 
-            console.log(`[WhatsApp] Successfully sent ${type}`);
             return { success: true };
-        } catch (error: any) {
-            console.error("[WhatsApp] Error:", error);
-            return { success: false, error: error.message };
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : "Failed to send WhatsApp";
+            return { success: false, error: msg };
         }
     }
 
@@ -196,12 +189,10 @@ export class NotificationService {
         settings: NotificationSettings
     ): Promise<{ success: boolean; error?: string }> {
         if (!settings.twilio_sid || !settings.twilio_token || !settings.twilio_phone) {
-            console.warn("[SMS] Twilio credentials missing");
             return { success: false, error: "Twilio credentials missing" };
         }
 
         try {
-            // Twilio API call
             const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${settings.twilio_sid}/Messages.json`;
             const auth = Buffer.from(`${settings.twilio_sid}:${settings.twilio_token}`).toString('base64');
 
@@ -221,15 +212,13 @@ export class NotificationService {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error("[SMS] Twilio error:", errorData);
                 return { success: false, error: errorData.message || `HTTP ${response.status}` };
             }
 
-            console.log(`[SMS] Successfully sent to ${to}`);
             return { success: true };
-        } catch (error: any) {
-            console.error("[SMS] Error:", error);
-            return { success: false, error: error.message };
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : "Failed to send SMS";
+            return { success: false, error: msg };
         }
     }
 }
