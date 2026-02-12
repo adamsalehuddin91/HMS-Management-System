@@ -7,6 +7,7 @@ import { useUIStore } from "@/lib/store/ui-store";
 interface HeaderProps {
   title: string;
   subtitle?: string;
+  action?: React.ReactNode;
   user: {
     name: string;
     role: string;
@@ -14,7 +15,7 @@ interface HeaderProps {
   };
 }
 
-export function Header({ title, subtitle, user }: HeaderProps) {
+export function Header({ title, subtitle, action, user }: HeaderProps) {
   const { toggleSidebar } = useUIStore();
 
   return (
@@ -44,6 +45,7 @@ export function Header({ title, subtitle, user }: HeaderProps) {
 
       {/* Right: Actions & User */}
       <div className="flex items-center gap-4">
+        {action}
         <button className="relative p-2 rounded-full hover:bg-[var(--secondary)] transition-colors">
           <Bell className="h-5 w-5 text-[var(--muted)]" />
           <span className="absolute top-1 right-1 h-2 w-2 bg-[var(--error)] rounded-full" />

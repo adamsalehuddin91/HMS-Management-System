@@ -21,6 +21,7 @@ import { POSCart } from "./components/POSCart";
 import { PaymentModal } from "./components/PaymentModal";
 import { SuccessModal } from "./components/SuccessModal";
 import { AddCustomerModal } from "./components/AddCustomerModal";
+import { RecentReceipts } from "./components/RecentReceipts";
 import { usePOS } from "./hooks/use-pos";
 
 type PaymentMethod = "cash" | "qr" | "card" | "bank";
@@ -83,6 +84,7 @@ export default function POSPage() {
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
   const [savingCustomer, setSavingCustomer] = useState(false);
   const [savingSale, setSavingSale] = useState(false);
+  const [showRecentReceipts, setShowRecentReceipts] = useState(false);
 
   // Handle customer search with debounce
   useEffect(() => {
@@ -193,7 +195,15 @@ export default function POSPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fcf9]">
-      <Header title="Point of Sale" user={user!} />
+      <Header title="Point of Sale" user={user!} action={
+        <button
+          onClick={() => setShowRecentReceipts(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 hover:shadow-md transition-all text-sm font-bold text-gray-700"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#2e7d32]"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+          Resit Terkini
+        </button>
+      } />
 
       <main className="p-4 md:p-6">
         <div className="flex flex-col xl:flex-row gap-6 xl:h-full">
@@ -296,6 +306,9 @@ export default function POSPage() {
           />
         )}
       </AnimatePresence>
+
+      {/* Recent Receipts Modal */}
+      <RecentReceipts isOpen={showRecentReceipts} onClose={() => setShowRecentReceipts(false)} />
     </div>
   );
 }
