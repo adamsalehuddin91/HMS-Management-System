@@ -142,10 +142,10 @@ export function RecentReceipts({ isOpen, onClose }: RecentReceiptsProps) {
             }
 
             if (action === "download") {
-                downloadReceipt(data);
+                await downloadReceipt(data);
             } else {
                 const message = generateWhatsAppReceipt(data);
-                const doc = generateReceipt(data);
+                const doc = await generateReceipt(data);
                 const pdfBlob = doc.output("blob");
                 const file = new File([pdfBlob], `resit-${data.receiptNo}.pdf`, { type: "application/pdf" });
 
@@ -153,7 +153,7 @@ export function RecentReceipts({ isOpen, onClose }: RecentReceiptsProps) {
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                     await navigator.share({ files: [file], title: `Resit ${data.receiptNo}`, text: decodeURIComponent(message) });
                 } else {
-                    downloadReceipt(data);
+                    await downloadReceipt(data);
                     let phone = "";
                     if (data.customerPhone) {
                         const raw = data.customerPhone.replace(/\D/g, "");

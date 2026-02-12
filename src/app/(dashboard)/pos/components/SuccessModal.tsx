@@ -87,10 +87,10 @@ export function SuccessModal({
         total, paymentMethod, pointsEarned
     ]);
 
-    const handleDownloadReceipt = () => {
+    const handleDownloadReceipt = async () => {
         setDownloading(true);
         try {
-            downloadReceipt(receiptData);
+            await downloadReceipt(receiptData);
         } catch (error) {
             console.error("Failed to generate receipt:", error);
             alert("Gagal menjana resit. Sila cuba lagi.");
@@ -120,7 +120,7 @@ export function SuccessModal({
         setDownloading(true);
         try {
             // Generate PDF Blob
-            const doc = generateReceipt(receiptData);
+            const doc = await generateReceipt(receiptData);
             const pdfBlob = doc.output('blob');
             const file = new File([pdfBlob], `resit-${receiptData.receiptNo}.pdf`, { type: "application/pdf" });
 
@@ -134,7 +134,7 @@ export function SuccessModal({
                 });
             } else {
                 // Fallback: Download PDF & Open WhatsApp
-                downloadReceipt(receiptData);
+                await downloadReceipt(receiptData);
 
                 // Construct WhatsApp URL
                 const url = `https://wa.me/${phone}?text=${message}`;

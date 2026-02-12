@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import { format } from "date-fns";
+import QRCode from "qrcode";
 
 // Add missing type definition for setLineDash
 declare module "jspdf" {
@@ -38,10 +39,32 @@ export interface ReceiptData {
 }
 
 /**
+ * Generate WhatsApp QR code as data URL
+ */
+async function generateWhatsAppQR(phone: string): Promise<string | null> {
+  try {
+    // Clean phone number: remove non-digits, ensure 60 prefix
+    const raw = phone.replace(/\D/g, "");
+    let cleanPhone = raw;
+    if (raw.startsWith("0")) cleanPhone = "6" + raw;
+    else if (raw.startsWith("1")) cleanPhone = "60" + raw;
+
+    const url = `https://wa.me/${cleanPhone}`;
+    return await QRCode.toDataURL(url, {
+      width: 200,
+      margin: 1,
+      color: { dark: "#000000", light: "#ffffff" },
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Generate a 58mm thermal receipt PDF
  * 58mm = ~164 points width
  */
-export function generateReceipt(data: ReceiptData): jsPDF {
+export async function generateReceipt(data: ReceiptData): Promise<jsPDF> {
   // 58mm width, variable height (will auto-extend)
   const pageWidth = 58;
   const margin = 4; // Increased margin for frame
@@ -261,7 +284,21 @@ export function generateReceipt(data: ReceiptData): jsPDF {
     y += 4;
   }
 
-  // 8. Footer
+  // 8. WhatsApp QR Code
+  if (data.businessPhone && data.businessPhone !== "-") {
+    const qrDataUrl = await generateWhatsAppQR(data.businessPhone);
+    if (qrDataUrl) {
+      y += 3;
+      const qrSize = 18; // mm
+      const qrX = (pageWidth - qrSize) / 2;
+      doc.addImage(qrDataUrl, "PNG", qrX, y, qrSize, qrSize);
+      y += qrSize + 2;
+      centerText("Scan Untuk WhatsApp Kami", 6, true);
+      y += 1;
+    }
+  }
+
+  // 9. Footer
   y += 4;
   centerText("Terima Kasih!", 8, true);
   centerText("Sila Datang Lagi", 6);
@@ -317,8 +354,8 @@ export function generateReceipt(data: ReceiptData): jsPDF {
 /**
  * Download receipt as PDF
  */
-export function downloadReceipt(data: ReceiptData): void {
-  const doc = generateReceipt(data);
+export async function downloadReceipt(data: ReceiptData): Promise<void> {
+  const doc = await generateReceipt(data);
   const filename = `resit-${data.receiptNo}-${format(data.date, "yyyyMMdd-HHmm")}.pdf`;
   doc.save(filename);
 }
@@ -326,8 +363,8 @@ export function downloadReceipt(data: ReceiptData): void {
 /**
  * Open receipt in new window for printing
  */
-export function printReceipt(data: ReceiptData): void {
-  const doc = generateReceipt(data);
+export async function printReceipt(data: ReceiptData): Promise<void> {
+  const doc = await generateReceipt(data);
   const pdfBlob = doc.output("blob");
   const pdfUrl = URL.createObjectURL(pdfBlob);
   window.open(pdfUrl, "_blank");
