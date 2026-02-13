@@ -54,7 +54,7 @@ export interface Service {
   category: string;
   price: number;
   member_price?: number;
-  duration_minutes: number;
+  duration: number;
   commission_rate: number;
   is_active: boolean;
   image_url?: string;
@@ -73,6 +73,7 @@ export interface Product {
   sell_price: number;
   stock_quantity: number;
   reorder_level: number;
+  low_stock_threshold: number;
   is_active: boolean;
   image_url?: string;
   created_at: string;
@@ -115,7 +116,7 @@ export interface Booking {
 }
 
 // Sale Types
-export type PaymentMethod = "cash" | "qr" | "bank" | "card";
+export type PaymentMethod = "cash" | "qr" | "transfer" | "card";
 export type SaleStatus = "pending" | "completed" | "voided";
 
 export interface Sale {
@@ -178,7 +179,7 @@ export interface Commission {
   service_name: string;
   sale_amount: number;
   commission_rate: number;
-  commission_amount: number;
+  amount: number;
   month: string; // YYYY-MM format
   is_paid: boolean;
   created_at: string;

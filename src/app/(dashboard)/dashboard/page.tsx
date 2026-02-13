@@ -115,7 +115,7 @@ export default function DashboardPage() {
         const currentMonth = format(today, 'yyyy-MM');
         let commissionQuery = supabase
           .from('commissions')
-          .select('commission_amount')
+          .select('amount')
           .eq('month', currentMonth);
 
         if (user?.role === "staff" && staffId) {
@@ -123,7 +123,7 @@ export default function DashboardPage() {
         }
 
         const { data: monthlyCommissions } = await commissionQuery;
-        const monthlyCommission = monthlyCommissions?.reduce((sum, c) => sum + (c.commission_amount || 0), 0) || 0;
+        const monthlyCommission = monthlyCommissions?.reduce((sum, c) => sum + (c.amount || 0), 0) || 0;
 
         // Fetch points
         const { data: pointsData } = await supabase

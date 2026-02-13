@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import {
   Scissors,
   Loader2,
@@ -159,7 +160,7 @@ export default function CustomerBookingPage() {
   const availableSlots: BookingSlot[] = (() => {
     if (!selectedDate || !selectedService) return [];
 
-    const duration = selectedService.duration_minutes || 60;
+    const duration = selectedService.duration || 60;
     const today = new Date();
     const isToday = selectedDate.toDateString() === today.toDateString();
 
@@ -203,7 +204,7 @@ export default function CustomerBookingPage() {
     setSaving(true);
 
     try {
-      const duration = selectedService.duration_minutes || 60;
+      const duration = selectedService.duration || 60;
       const [hours, mins] = selectedTime.split(':').map(Number);
       const totalMins = hours * 60 + mins + duration;
       const endHours = Math.floor(totalMins / 60);
@@ -236,7 +237,7 @@ export default function CustomerBookingPage() {
 
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
-      alert(`Booking failed: ${msg}`);
+      toast.error(`Tempahan gagal: ${msg}`);
     } finally {
       setSaving(false);
     }

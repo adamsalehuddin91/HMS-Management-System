@@ -3,16 +3,25 @@
 import { X, Loader2 } from "lucide-react";
 import { Button, Card, CardContent, Input } from "@/components/ui";
 
+interface ServiceFormData {
+    name: string;
+    category: string;
+    price: number;
+    member_price: number;
+    duration: number;
+    commission_rate: number;
+}
+
 interface ServiceModalsProps {
     showAddModal: boolean;
     setShowAddModal: (show: boolean) => void;
-    newService: any;
-    setNewService: (service: any) => void;
+    newService: ServiceFormData;
+    setNewService: (service: ServiceFormData) => void;
 
     showEditModal: boolean;
     setShowEditModal: (show: boolean) => void;
-    editService: any;
-    setEditService: (service: any) => void;
+    editService: ServiceFormData;
+    setEditService: (service: ServiceFormData) => void;
 
     savingService: boolean;
     handleAddService: () => void;
@@ -111,8 +120,8 @@ export function ServiceModals({
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Durasi (Minit)</label>
                                 <Input
                                     type="number"
-                                    value={currentService.duration_minutes}
-                                    onChange={(e) => setCurrentService({ ...currentService, duration_minutes: Number(e.target.value) })}
+                                    value={currentService.duration}
+                                    onChange={(e) => setCurrentService({ ...currentService, duration: Number(e.target.value) })}
                                     className="h-12 bg-gray-50 border-none rounded-2xl focus-visible:ring-1 focus-visible:ring-[#2e7d32]/20 font-bold tabular-nums"
                                 />
                             </div>

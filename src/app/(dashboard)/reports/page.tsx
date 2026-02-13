@@ -41,8 +41,8 @@ export default function ReportsPage() {
 
   const isCurrentMonth = format(selectedMonth, 'yyyy-MM') === format(new Date(), 'yyyy-MM');
 
-  const fetchAll = async (query: any) => {
-    const allData: any[] = [];
+  const fetchAll = async <T,>(query: any) => {
+    const allData: T[] = [];
     let offset = 0;
     while (true) {
       const { data, error } = await query.range(offset, offset + 999);
@@ -97,13 +97,13 @@ export default function ReportsPage() {
         } else setTopServices([]);
 
         const monthStr = format(selectedMonth, 'yyyy-MM');
-        const { data: commData } = await supabase.from('commissions').select('staff_id, commission_amount, sale_amount, staff:staff(name)').eq('month', monthStr);
+        const { data: commData } = await supabase.from('commissions').select('staff_id, amount, sale_amount, staff:staff(name)').eq('month', monthStr);
         if (commData && commData.length > 0) {
-          const sStats: { [key: string]: any } = {};
+          const sStats: { [key: string]: { name: string; services: number; revenue: number; commission: number } } = {};
           commData.forEach((c: any) => {
             const sid = c.staff_id; const name = c.staff?.name || 'Unknown';
             if (!sStats[sid]) sStats[sid] = { name, services: 0, revenue: 0, commission: 0 };
-            sStats[sid].services++; sStats[sid].revenue += c.sale_amount || 0; sStats[sid].commission += c.commission_amount || 0;
+            sStats[sid].services++; sStats[sid].revenue += c.sale_amount || 0; sStats[sid].commission += c.amount || 0;
           });
           setStaffPerformance(Object.entries(sStats).map(([id, d]) => ({ id, ...d })).sort((a, b) => b.revenue - a.revenue));
         } else setStaffPerformance([]);

@@ -3,13 +3,9 @@
 import { MoreVertical, Loader2, Edit3, PackagePlus } from "lucide-react";
 import { Card, CardContent, Badge } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
+import type { Product } from "@/types";
 
-interface ProductWithUI {
-    id: string;
-    name: string;
-    brand: string | null;
-    category: string;
-    sku: string | null;
+interface ProductWithUI extends Product {
     stockLevel: number;
     status: 'in_stock' | 'low_stock' | 'out_of_stock';
     price: number;

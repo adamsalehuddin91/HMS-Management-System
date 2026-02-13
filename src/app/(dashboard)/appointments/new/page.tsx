@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   User,
@@ -194,7 +195,7 @@ export default function NewBookingPage() {
       if (bookingError) throw bookingError;
       setStep("complete");
     } catch {
-      alert("Failed to create booking");
+      toast.error("Gagal mencipta tempahan.");
     } finally {
       setSaving(false);
     }

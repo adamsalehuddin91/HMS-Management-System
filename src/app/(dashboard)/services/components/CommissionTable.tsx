@@ -12,7 +12,7 @@ interface ServiceWithUI {
     price: number;
     member_price?: number;
     memberPrice: number;
-    duration_minutes: number;
+    duration: number;
     commission_rate: number;
     commissionRate: number;
     is_active: boolean;

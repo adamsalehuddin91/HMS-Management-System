@@ -5,18 +5,28 @@ import { Button, Card, CardContent, Input } from "@/components/ui";
 
 type CustomerTier = 'Normal' | 'Member' | 'VIP';
 
+export interface CustomerFormData {
+    id?: string;
+    name: string;
+    phone: string;
+    email: string;
+    tier: CustomerTier;
+    birthday: string;
+    notes: string;
+}
+
 interface CustomerModalsProps {
     showNewModal: boolean;
     setShowNewModal: (show: boolean) => void;
-    newCustomer: any;
-    setNewCustomer: (customer: any) => void;
+    newCustomer: CustomerFormData;
+    setNewCustomer: (customer: CustomerFormData) => void;
     savingNew: boolean;
     handleAddCustomer: () => void;
 
     showEditModal: boolean;
     setShowEditModal: (show: boolean) => void;
-    editCustomer: any;
-    setEditCustomer: (customer: any) => void;
+    editCustomer: CustomerFormData;
+    setEditCustomer: (customer: CustomerFormData) => void;
     savingEdit: boolean;
     handleEditCustomer: () => void;
 }

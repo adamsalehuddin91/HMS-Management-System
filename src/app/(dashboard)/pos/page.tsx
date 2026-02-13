@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Header } from "@/components/layout/header";
 import { createClient } from "@/lib/supabase/client";
@@ -24,7 +25,7 @@ import { AddCustomerModal } from "./components/AddCustomerModal";
 import { RecentReceipts } from "./components/RecentReceipts";
 import { usePOS } from "./hooks/use-pos";
 
-type PaymentMethod = "cash" | "qr" | "card" | "bank";
+import { PaymentMethod } from "@/types";
 
 export default function POSPage() {
   const { user } = useAuthStore();
@@ -127,7 +128,7 @@ export default function POSPage() {
 
   const handleAddCustomer = async () => {
     if (!newCustomerName.trim() || !newCustomerPhone.trim()) {
-      alert("Please enter name and phone number");
+      toast.error("Sila masukkan nama dan nombor telefon.");
       return;
     }
 
@@ -166,7 +167,7 @@ export default function POSPage() {
       setShowCustomerDropdown(false);
       setSearchCustomer("");
     } catch {
-      alert("Failed to add customer. Please try again.");
+      toast.error("Gagal menambah pelanggan. Sila cuba lagi.");
     } finally {
       setSavingCustomer(false);
     }
@@ -181,7 +182,7 @@ export default function POSPage() {
       setShowSuccessModal(true);
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Unknown error';
-      alert(`Failed to complete sale: ${msg}`);
+      toast.error(`Gagal menyelesaikan jualan: ${msg}`);
     } finally {
       setSavingSale(false);
     }
@@ -200,7 +201,7 @@ export default function POSPage() {
           onClick={() => setShowRecentReceipts(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 hover:shadow-md transition-all text-sm font-bold text-gray-700"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#2e7d32]"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#2e7d32]"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M16 13H8" /><path d="M16 17H8" /><path d="M10 9H8" /></svg>
           Resit Terkini
         </button>
       } />

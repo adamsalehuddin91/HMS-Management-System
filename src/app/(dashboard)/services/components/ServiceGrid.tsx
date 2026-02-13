@@ -12,7 +12,7 @@ interface ServiceWithUI {
     price: number;
     member_price?: number;
     memberPrice: number;
-    duration_minutes: number;
+    duration: number;
     commission_rate: number;
     commissionRate: number;
     is_active: boolean;
@@ -104,7 +104,7 @@ export function ServiceGrid({
                             <div className="flex items-center justify-between px-2">
                                 <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                                     <Clock className="h-3.5 w-3.5" />
-                                    {service.duration_minutes} Minit
+                                    {service.duration} Minit
                                 </div>
                                 <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                                     <Percent className="h-3.5 w-3.5" />

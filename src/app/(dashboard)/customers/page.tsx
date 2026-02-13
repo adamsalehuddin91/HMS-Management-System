@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/header";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 import type { Customer } from "@/types";
 import { format } from "date-fns";
 
 // Sub-components
 import { CustomerMasterList } from "./components/CustomerMasterList";
 import { CustomerDetailView } from "./components/CustomerDetailView";
-import { CustomerModals } from "./components/CustomerModals";
+import { CustomerModals, CustomerFormData } from "./components/CustomerModals";
 
 type CustomerTier = 'Normal' | 'Member' | 'VIP';
 
@@ -40,7 +41,7 @@ export default function CustomersPage() {
   const [savingCustomer, setSavingCustomer] = useState(false);
 
   const [showEditCustomerModal, setShowEditCustomerModal] = useState(false);
-  const [editCustomer, setEditCustomer] = useState({
+  const [editCustomer, setEditCustomer] = useState<CustomerFormData>({
     id: "", name: "", phone: "", email: "", tier: "Normal" as CustomerTier, birthday: "", notes: ""
   });
   const [savingEdit, setSavingEdit] = useState(false);
@@ -58,18 +59,29 @@ export default function CustomersPage() {
     const fetchCustomers = async () => {
       setLoading(true);
       const supabase = createClient();
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const allData: Customer[] = [];
+      let offset = 0;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from('customers')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(offset, offset + 999);
 
-      if (error) {
-        console.error('Error fetching customers:', error);
-      } else {
-        setCustomers(data as Customer[]);
-        if (data.length > 0 && !selectedCustomer) {
-          setSelectedCustomer(data[0] as Customer);
+        if (error) {
+          console.error('Error fetching customers:', error);
+          break;
         }
+        if (!data || data.length === 0) break;
+        allData.push(...(data as Customer[]));
+        if (data.length < 1000) break;
+        offset += 1000;
+      }
+
+      setCustomers(allData);
+      if (allData.length > 0 && !selectedCustomer) {
+        setSelectedCustomer(allData[0]);
       }
       setLoading(false);
     };
@@ -152,13 +164,13 @@ export default function CustomersPage() {
       setAdjustmentReason("Referral Bonus");
     } catch (error) {
       console.error("Error updating balance:", error);
-      alert("Failed to update balance.");
+      toast.error("Gagal mengemaskini baki mata.");
     }
   };
 
   const handleAddCustomer = async () => {
     if (!newCustomer.name || !newCustomer.phone) {
-      alert("Please fill in name and phone number.");
+      toast.error("Sila isi nama dan nombor telefon.");
       return;
     }
     setSavingCustomer(true);
@@ -179,7 +191,7 @@ export default function CustomersPage() {
       setShowNewCustomerModal(false);
     } catch (error) {
       console.error("Error adding customer:", error);
-      alert("Failed to add customer.");
+      toast.error("Gagal menambah pelanggan.");
     } finally {
       setSavingCustomer(false);
     }
@@ -187,7 +199,7 @@ export default function CustomersPage() {
 
   const handleEditCustomer = async () => {
     if (!editCustomer.name || !editCustomer.phone) {
-      alert("Please fill in name and phone number.");
+      toast.error("Sila isi nama dan nombor telefon.");
       return;
     }
     setSavingEdit(true);
@@ -207,7 +219,7 @@ export default function CustomersPage() {
       setShowEditCustomerModal(false);
     } catch (error) {
       console.error("Error updating customer:", error);
-      alert("Failed to update customer.");
+      toast.error("Gagal mengemaskini pelanggan.");
     } finally {
       setSavingEdit(false);
     }

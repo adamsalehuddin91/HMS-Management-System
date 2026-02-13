@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Check, Plus, ArrowLeft, Download, Loader2, MessageCircle } from "lucide-react";
 import { Button, Card, CardContent } from "@/components/ui";
@@ -93,7 +94,7 @@ export function SuccessModal({
             await downloadReceipt(receiptData);
         } catch (error) {
             console.error("Failed to generate receipt:", error);
-            alert("Gagal menjana resit. Sila cuba lagi.");
+            toast.error("Gagal menjana resit. Sila cuba lagi.");
         } finally {
             setDownloading(false);
         }
@@ -140,7 +141,7 @@ export function SuccessModal({
                 const url = `https://wa.me/${phone}?text=${message}`;
                 window.open(url, "_blank");
 
-                alert("Resit telah dimuat turun. Sila lampirkan PDF secara manual di WhatsApp.");
+                toast.info("Resit telah dimuat turun. Sila lampirkan PDF secara manual di WhatsApp.");
             }
         } catch (error) {
             console.error("Error sharing receipt:", error);

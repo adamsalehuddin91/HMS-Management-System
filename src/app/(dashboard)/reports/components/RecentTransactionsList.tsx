@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { RotateCcw, Loader2, FileText, Download, MessageCircle } from "lucide-react";
 import { Card, CardContent, Badge, Button } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
@@ -116,7 +117,7 @@ export function RecentTransactionsList({
         try {
             const data = await fetchReceiptData(saleId);
             if (!data) {
-                alert("Gagal mendapatkan data resit.");
+                toast.error("Gagal mendapatkan data resit.");
                 return;
             }
 
@@ -144,7 +145,7 @@ export function RecentTransactionsList({
             }
         } catch (error) {
             console.error("Receipt error:", error);
-            alert("Gagal menjana resit.");
+            toast.error("Gagal menjana resit.");
         } finally {
             setLoadingReceiptId(null);
         }

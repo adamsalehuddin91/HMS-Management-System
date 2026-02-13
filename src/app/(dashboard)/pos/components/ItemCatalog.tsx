@@ -5,6 +5,8 @@ import { Search, Scissors, Package, Loader2 } from "lucide-react";
 import { Button, Card, CardContent, Input } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 
+import type { Service, Product } from "@/types";
+
 interface ItemCatalogProps {
     activeTab: 'services' | 'products';
     setActiveTab: (tab: 'services' | 'products') => void;
@@ -14,10 +16,10 @@ interface ItemCatalogProps {
     searchService: string;
     setSearchService: (val: string) => void;
     loading: boolean;
-    filteredServices: any[];
-    products: any[];
-    addToCart: (service: any) => void;
-    addProductToCart: (product: any) => void;
+    filteredServices: Service[];
+    products: Product[];
+    addToCart: (service: Service) => void;
+    addProductToCart: (product: Product) => void;
     isMember: boolean;
 }
 

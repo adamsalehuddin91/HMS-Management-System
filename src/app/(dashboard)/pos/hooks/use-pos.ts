@@ -4,24 +4,25 @@ import { CartItem, StaffMember } from "@/lib/utils/pos-calculations";
 import { posService } from "@/lib/services/pos-service";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import type { Service, Product, Customer, PaymentMethod, User } from "@/types";
 
-export function usePOS(bookingId: string | null, user: any) {
+export function usePOS(bookingId: string | null, user: User | null) {
     const router = useRouter();
 
     // Data states
     const [loading, setLoading] = useState(true);
-    const [services, setServices] = useState<any[]>([]);
-    const [products, setProducts] = useState<any[]>([]);
+    const [services, setServices] = useState<Service[]>([]);
+    const [products, setProducts] = useState<Product[]>([]);
     const [staff, setStaff] = useState<StaffMember[]>([]);
-    const [customers, setCustomers] = useState<any[]>([]);
+    const [customers, setCustomers] = useState<Customer[]>([]);
 
     // UI states
     const [activeTab, setActiveTab] = useState<'services' | 'products'>('services');
     const [selectedCategory, setSelectedCategory] = useState("All");
-    const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+    const [selectedCustomer, setSelectedCustomer] = useState<Pick<Customer, 'id' | 'name' | 'phone' | 'points_balance' | 'is_member'> | null>(null);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [pointsToRedeem, setPointsToRedeem] = useState(0);
-    const [paymentMethod, setPaymentMethod] = useState<any>("cash");
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
 
     // Booking state
     const [currentBookingId, setCurrentBookingId] = useState<string | null>(null);
@@ -57,7 +58,7 @@ export function usePOS(bookingId: string | null, user: any) {
                 if (servicesData) setServices(servicesData);
                 if (productsData) setProducts(productsData);
                 if (staffData) {
-                    setStaff(staffData.map((s: any) => ({
+                    setStaff(staffData.map((s: { id: string; name: string; role: string }) => ({
                         id: s.id,
                         name: s.name,
                         role: s.role,
@@ -107,7 +108,7 @@ export function usePOS(bookingId: string | null, user: any) {
                                 ? bookingData.service.member_price
                                 : bookingData.service.price;
 
-                            const assignedStaff = staffData.find((s: any) => s.id === bookingData.staff.id);
+                            const assignedStaff = staffData.find((s: { id: string }) => s.id === bookingData.staff.id);
 
                             setCart([{
                                 id: bookingData.service.id,
@@ -133,7 +134,7 @@ export function usePOS(bookingId: string | null, user: any) {
     }, [bookingId]);
 
     // Cart operations
-    const addToCart = (service: any) => {
+    const addToCart = (service: Service) => {
         if (staff.length === 0) {
             toast.error("Kakitangan tidak dijumpai. Sila tambah kakitangan terlebih dahulu.");
             return;
@@ -159,7 +160,7 @@ export function usePOS(bookingId: string | null, user: any) {
         }
     };
 
-    const addProductToCart = (product: any) => {
+    const addProductToCart = (product: Product) => {
         if (staff.length === 0) {
             toast.error("Kakitangan tidak dijumpai.");
             return;

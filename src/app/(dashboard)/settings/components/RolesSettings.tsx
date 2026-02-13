@@ -19,7 +19,7 @@ export function RolesSettings() {
                                 <h3 className="text-xl font-black text-gray-900 tracking-tight italic">Admin / Pengurus</h3>
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 italic">Akses penuh ke semua modul sistem</p>
                             </div>
-                            <Button variant="outline" size="sm" className="h-10 px-6 rounded-xl border-none bg-white font-black text-[9px] uppercase tracking-widest text-[#2e7d32]">Ubah Izin</Button>
+                            <Button variant="outline" size="sm" className="h-10 px-6 rounded-xl border-none bg-white font-black text-[9px] uppercase tracking-widest text-[#2e7d32]" disabled title="Akan datang">Ubah Izin</Button>
                         </div>
                         <div className="flex flex-wrap gap-3">
                             {["Dashboard", "POS", "Bookings", "Customers", "Staff", "Inventory", "Reports", "Settings"].map((p) => (
@@ -38,7 +38,7 @@ export function RolesSettings() {
                                 <h3 className="text-xl font-black text-gray-900 tracking-tight italic">Staff / Gunting</h3>
                                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1 italic">Akses operasi terhad</p>
                             </div>
-                            <Button variant="outline" size="sm" className="h-10 px-6 rounded-xl border-none bg-white font-black text-[9px] uppercase tracking-widest text-gray-500">Ubah Izin</Button>
+                            <Button variant="outline" size="sm" className="h-10 px-6 rounded-xl border-none bg-white font-black text-[9px] uppercase tracking-widest text-gray-500" disabled title="Akan datang">Ubah Izin</Button>
                         </div>
                         <div className="flex flex-wrap gap-3">
                             {["Dashboard", "POS", "Bookings", "Customers (Paparan)"].map((p) => (

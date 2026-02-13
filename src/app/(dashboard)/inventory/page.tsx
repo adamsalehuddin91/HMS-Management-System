@@ -15,7 +15,7 @@ import { PRODUCT_CATEGORIES } from "@/lib/constants/categories";
 import { InventoryStatsHeader } from "./components/InventoryStatsHeader";
 import { InventoryFilters } from "./components/InventoryFilters";
 import { ProductMasterTable } from "./components/ProductMasterTable";
-import { InventoryModals } from "./components/InventoryModals";
+import { InventoryModals, ProductFormData } from "./components/InventoryModals";
 import { InventoryHistoryTab } from "./components/InventoryHistoryTab";
 
 interface ProductWithUI extends Product {
@@ -35,7 +35,7 @@ export default function InventoryPage() {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [savingProduct, setSavingProduct] = useState(false);
-  const [newProduct, setNewProduct] = useState({ name: "", brand: "", category: "Shampoo", sku: "", cost_price: 0, sell_price: 0, stock_quantity: 0, low_stock_threshold: 5 });
+  const [newProduct, setNewProduct] = useState({ name: "", brand: "", category: "Shampoo", sku: "", cost_price: 0, sell_price: 0, stock_quantity: 0, reorder_level: 5, low_stock_threshold: 5 });
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editProduct, setEditProduct] = useState<ProductWithUI | null>(null);
@@ -96,7 +96,7 @@ export default function InventoryPage() {
       if (error) throw error;
       const mapped: ProductWithUI = { ...data, stockLevel: data.stock_quantity, status: data.stock_quantity === 0 ? 'out_of_stock' : (data.stock_quantity <= data.low_stock_threshold ? 'low_stock' : 'in_stock'), price: data.sell_price, image: data.image_url || getProductImage(data.category) };
       setProducts(prev => [mapped, ...prev]);
-      setNewProduct({ name: "", brand: "", category: "Shampoo", sku: "", cost_price: 0, sell_price: 0, stock_quantity: 0, low_stock_threshold: 5 });
+      setNewProduct({ name: "", brand: "", category: "Shampoo", sku: "", cost_price: 0, sell_price: 0, stock_quantity: 0, reorder_level: 5, low_stock_threshold: 5 });
       setShowAddModal(false);
       toast.success("Produk berjaya dilaraskan!");
     } catch (error) {
@@ -170,11 +170,11 @@ export default function InventoryPage() {
 
             <ProductMasterTable
               loading={loading}
-              products={filteredProducts as any}
+              products={filteredProducts}
               actionMenuId={actionMenuId}
               setActionMenuId={setActionMenuId}
-              openEditModal={(p: any) => { setEditProduct(p); setShowEditModal(true); setActionMenuId(null); }}
-              openStockModal={(p: any) => { setStockProduct(p); setStockAdjustment(0); setStockReason("Restock"); setShowStockModal(true); setActionMenuId(null); }}
+              openEditModal={(p) => { setEditProduct(p); setShowEditModal(true); setActionMenuId(null); }}
+              openStockModal={(p) => { setStockProduct(p); setStockAdjustment(0); setStockReason("Restock"); setShowStockModal(true); setActionMenuId(null); }}
             />
           </>
         ) : (
@@ -183,9 +183,17 @@ export default function InventoryPage() {
       </div>
 
       <InventoryModals
-        showAddModal={showAddModal} setShowAddModal={setShowAddModal} newProduct={newProduct} setNewProduct={setNewProduct} savingProduct={savingProduct} handleAddProduct={handleAddProduct}
-        showEditModal={showEditModal} setShowEditModal={setShowEditModal} editProduct={editProduct} setEditProduct={setEditProduct} savingEdit={savingEdit} handleEditProduct={handleEditProduct}
-        showStockModal={showStockModal} setShowStockModal={setShowStockModal} stockProduct={stockProduct} setStockProduct={setStockProduct} stockAdjustment={stockAdjustment} setStockAdjustment={setStockAdjustment} stockReason={stockReason} setStockReason={setStockReason} savingStock={savingStock} handleStockAdjustment={handleStockAdjustment}
+        showAddModal={showAddModal} setShowAddModal={setShowAddModal}
+        newProduct={newProduct} setNewProduct={setNewProduct as any}
+        savingProduct={savingProduct} handleAddProduct={handleAddProduct}
+        showEditModal={showEditModal} setShowEditModal={setShowEditModal}
+        editProduct={editProduct as unknown as ProductFormData} setEditProduct={setEditProduct as any}
+        savingEdit={savingEdit} handleEditProduct={handleEditProduct}
+        showStockModal={showStockModal} setShowStockModal={setShowStockModal}
+        stockProduct={stockProduct as any} setStockProduct={setStockProduct as any}
+        stockAdjustment={stockAdjustment} setStockAdjustment={setStockAdjustment}
+        stockReason={stockReason} setStockReason={setStockReason}
+        savingStock={savingStock} handleStockAdjustment={handleStockAdjustment}
         productCategories={productCategories}
       />
     </div>

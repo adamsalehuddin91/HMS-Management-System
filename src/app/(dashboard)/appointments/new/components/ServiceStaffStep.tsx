@@ -82,7 +82,7 @@ export function ServiceStaffStep({
                                     <p className="font-extrabold text-gray-900 truncate">{service.name}</p>
                                     <p className="text-xs font-bold text-gray-400 flex items-center gap-1.5 mt-0.5">
                                         <Clock className="h-3 w-3" />
-                                        {service.duration_minutes || 60} minit
+                                        {service.duration || 60} minit
                                     </p>
                                 </div>
                                 <div className="text-right">

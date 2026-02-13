@@ -99,7 +99,7 @@ export default function LoginPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium">Password</label>
-                <button type="button" className="text-sm text-[var(--primary)] hover:underline">
+                <button type="button" className="text-sm text-[var(--primary)] hover:underline opacity-50 cursor-not-allowed" disabled title="Akan datang">
                   Forgot password?
                 </button>
               </div>

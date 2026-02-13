@@ -25,8 +25,8 @@ export const posService = {
         staff,
         products // Needed to update stock levels
     }: {
-        user: any;
-        selectedCustomer: any;
+        user: { id: string } | null;
+        selectedCustomer: { id: string; points_balance?: number; visit_count?: number } | null;
         currentBookingId: string | null;
         subtotal: number;
         pointsDiscount: number;
@@ -37,7 +37,7 @@ export const posService = {
         paymentMethod: string;
         cart: CartItem[];
         staff: StaffMember[];
-        products: any[];
+        products: { id: string; stock_quantity: number }[];
     }) {
         const supabase = createClient();
 
@@ -145,7 +145,7 @@ export const posService = {
                         service_name: item.name,
                         sale_amount: item.price * item.quantity,
                         commission_rate: commission.primaryRate,
-                        commission_amount: commission.primary,
+                        amount: commission.primary,
                         month: currentMonth,
                         is_paid: false
                     });
@@ -159,7 +159,7 @@ export const posService = {
                         service_name: item.name,
                         sale_amount: item.price * item.quantity,
                         commission_rate: commission.secondaryRate,
-                        commission_amount: commission.secondary,
+                        amount: commission.secondary,
                         month: currentMonth,
                         is_paid: false
                     });

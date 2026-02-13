@@ -86,7 +86,7 @@ export function ServiceSelection({
                                         </span>
                                         <span className="text-xs text-gray-400 flex items-center">
                                             <Clock className="h-3 w-3 mr-1" />
-                                            {service.duration_minutes || 60} min
+                                            {service.duration || 60} min
                                         </span>
                                     </div>
                                 </div>

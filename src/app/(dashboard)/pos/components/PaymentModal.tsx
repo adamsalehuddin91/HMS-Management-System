@@ -6,14 +6,16 @@ import { Button, Card, CardContent } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { CartItem, StaffMember, getCommissionBreakdown } from "@/lib/utils/pos-calculations";
 
+import type { PaymentMethod } from "@/types";
+
 interface PaymentModalProps {
     total: number;
-    paymentMethod: string;
-    setPaymentMethod: (method: any) => void;
+    paymentMethod: PaymentMethod;
+    setPaymentMethod: (method: PaymentMethod) => void;
     savingSale: boolean;
     handleCompleteSale: () => void;
     setShowPaymentModal: (show: boolean) => void;
-    selectedCustomer: any;
+    selectedCustomer: { id: string; name: string; points_balance?: number } | null;
     pointsEarned: number;
     cart: CartItem[];
     staff: StaffMember[];
@@ -65,11 +67,11 @@ export function PaymentModal({
                                     { id: "cash", icon: Banknote, label: "Cash Pay" },
                                     { id: "qr", icon: QrCode, label: "QR Payment" },
                                     { id: "card", icon: CreditCard, label: "Terminal" },
-                                    { id: "bank", icon: CreditCard, label: "Transfer" },
+                                    { id: "transfer", icon: CreditCard, label: "Transfer" },
                                 ].map((method) => (
                                     <button
                                         key={method.id}
-                                        onClick={() => setPaymentMethod(method.id)}
+                                        onClick={() => setPaymentMethod(method.id as PaymentMethod)}
                                         className={`p-4 rounded-3xl border-2 text-center transition-all duration-300 relative overflow-hidden group ${paymentMethod === method.id
                                             ? "border-[#2e7d32] bg-[#2e7d32]/5 shadow-lg shadow-[#2e7d32]/10"
                                             : "border-gray-50 hover:border-[#2e7d32]/20 hover:bg-gray-50"

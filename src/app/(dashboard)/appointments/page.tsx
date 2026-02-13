@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { Button } from "@/components/ui";
@@ -53,7 +54,7 @@ export default function AppointmentsPage() {
         .select(`
                     *,
                     customer:customers(id, name, phone, is_member, tier),
-                    service:services(id, name, price, duration, duration_minutes),
+                    service:services(id, name, price, duration),
                     staff:staff(id, name)
                 `)
         .gte('booking_date', firstDay.toISOString().split('T')[0])
@@ -151,7 +152,7 @@ export default function AppointmentsPage() {
       setShowRescheduleModal(false);
     } catch (err) {
       console.error(err);
-      alert("Failed to reschedule");
+      toast.error("Gagal menjadualkan semula.");
     } finally {
       setRescheduling(false);
     }
@@ -178,7 +179,7 @@ export default function AppointmentsPage() {
       setShowCancelModal(false);
     } catch (err) {
       console.error(err);
-      alert("Failed to cancel");
+      toast.error("Gagal membatalkan temujanji.");
     } finally {
       setCancelling(false);
     }

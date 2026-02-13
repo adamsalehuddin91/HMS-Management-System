@@ -155,7 +155,7 @@ export default function StaffPage() {
       const { error } = await supabase.from('commissions').insert({
         staff_id: selectedStaff.id, sale_id: null, sale_item_id: null,
         service_name: `Pelarasan Manual (${commissionAdjustment.type === "bonus" ? "Bonus" : "Deduction"})`,
-        sale_amount: 0, commission_rate: 0, commission_amount: adjustedAmount,
+        sale_amount: 0, commission_rate: 0, amount: adjustedAmount,
         month: new Date().toISOString().slice(0, 7), is_paid: false, created_at: new Date().toISOString()
       });
       if (error) throw error;

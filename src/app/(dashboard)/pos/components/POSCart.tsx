@@ -6,14 +6,22 @@ import { Button, Card, CardContent, Input, Avatar } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { CartItem as CartItemType, StaffMember, calculateItemCommission } from "@/lib/utils/pos-calculations";
 
+interface POSCustomer {
+    id: string;
+    name: string;
+    phone: string;
+    points_balance: number;
+    is_member: boolean;
+}
+
 interface POSCartProps {
-    selectedCustomer: any;
-    setSelectedCustomer: (c: any) => void;
+    selectedCustomer: POSCustomer | null;
+    setSelectedCustomer: (c: POSCustomer | null) => void;
     searchCustomer: string;
     setSearchCustomer: (val: string) => void;
     showCustomerDropdown: boolean;
     setShowCustomerDropdown: (show: boolean) => void;
-    filteredCustomers: any[];
+    filteredCustomers: POSCustomer[];
     isSearchingCustomers: boolean;
     setShowAddCustomerModal: (show: boolean) => void;
     setNewCustomerName: (name: string) => void;

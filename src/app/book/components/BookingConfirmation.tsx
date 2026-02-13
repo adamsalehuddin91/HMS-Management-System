@@ -65,7 +65,7 @@ export function BookingConfirmation({
                             </h3>
                             <div className="flex items-center text-gray-400 text-xs font-medium">
                                 <Clock className="w-3.5 h-3.5 mr-1" />
-                                {selectedService?.duration_minutes || 60} minit
+                                {selectedService?.duration || 60} minit
                             </div>
                         </div>
                         <div className="text-right">

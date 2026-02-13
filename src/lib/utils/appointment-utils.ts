@@ -6,7 +6,7 @@ export interface Service {
     category: string;
     price: number;
     member_price?: number;
-    duration_minutes?: number;
+    duration?: number;
     image_url?: string;
 }
 
@@ -52,7 +52,6 @@ export interface BookingData {
         name: string;
         price: number;
         duration?: number;
-        duration_minutes?: number;
     };
     staff?: {
         id: string;
@@ -75,7 +74,7 @@ export const isCustomerMember = (customer?: BookingData['customer']): boolean =>
 
 export const getServiceDuration = (service?: BookingData['service'] | Service): number => {
     if (!service) return 60;
-    return service.duration_minutes || (service as any).duration || 60;
+    return service.duration || 60;
 };
 
 export const getStatusColor = (status: string): string => {

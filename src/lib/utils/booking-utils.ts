@@ -6,7 +6,7 @@ export interface Service {
     category: string;
     price: number;
     member_price?: number;
-    duration_minutes?: number;
+    duration?: number;
     image_url?: string;
 }
 

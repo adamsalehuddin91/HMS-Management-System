@@ -3,25 +3,41 @@
 import { X, Loader2, Minus, Plus } from "lucide-react";
 import { Button, Card, CardContent, Input } from "@/components/ui";
 
+export interface ProductFormData {
+    name: string;
+    sku?: string;
+    brand?: string;
+    category: string;
+    cost_price: number;
+    sell_price: number;
+    stock_quantity: number;
+    reorder_level: number;
+    low_stock_threshold: number;
+}
+
+interface StockProductData extends ProductFormData {
+    id: string;
+}
+
 interface InventoryModalsProps {
     showAddModal: boolean;
     setShowAddModal: (show: boolean) => void;
-    newProduct: any;
-    setNewProduct: (product: any) => void;
+    newProduct: ProductFormData;
+    setNewProduct: (product: ProductFormData) => void;
     savingProduct: boolean;
     handleAddProduct: () => void;
 
     showEditModal: boolean;
     setShowEditModal: (show: boolean) => void;
-    editProduct: any;
-    setEditProduct: (product: any) => void;
+    editProduct: ProductFormData;
+    setEditProduct: (product: ProductFormData) => void;
     savingEdit: boolean;
     handleEditProduct: () => void;
 
     showStockModal: boolean;
     setShowStockModal: (show: boolean) => void;
-    stockProduct: any;
-    setStockProduct: (product: any) => void;
+    stockProduct: StockProductData | null;
+    setStockProduct: (product: StockProductData | null) => void;
     stockAdjustment: number;
     setStockAdjustment: (adj: number) => void;
     stockReason: string;

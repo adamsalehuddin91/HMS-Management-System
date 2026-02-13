@@ -53,10 +53,10 @@ export default function ServicesPage() {
   const [selectedService, setSelectedService] = useState<ServiceWithUI | null>(null);
 
   const [newService, setNewService] = useState({
-    name: "", category: "Haircut", price: 0, member_price: 0, duration_minutes: 30, commission_rate: 10
+    name: "", category: "Haircut", price: 0, member_price: 0, duration: 30, commission_rate: 10
   });
   const [editService, setEditService] = useState({
-    name: "", category: "", price: 0, member_price: 0, duration_minutes: 30, commission_rate: 10
+    name: "", category: "", price: 0, member_price: 0, duration: 30, commission_rate: 10
   });
 
   const isAdmin = user?.role === "admin";
@@ -99,7 +99,7 @@ export default function ServicesPage() {
       const { data, error } = await supabase.from('services').insert({
         name: newService.name, category: newService.category, price: newService.price,
         member_price: newService.member_price || newService.price,
-        duration_minutes: newService.duration_minutes, commission_rate: newService.commission_rate,
+        duration: newService.duration, commission_rate: newService.commission_rate,
         is_active: true, created_at: new Date().toISOString()
       }).select().single();
       if (error) throw error;
@@ -108,7 +108,7 @@ export default function ServicesPage() {
         memberPrice: data.member_price || data.price, isActive: data.is_active,
         image: data.image_url || CATEGORY_IMAGES[data.category] || DEFAULT_IMAGE
       }, ...prev]);
-      setNewService({ name: "", category: "Haircut", price: 0, member_price: 0, duration_minutes: 30, commission_rate: 10 });
+      setNewService({ name: "", category: "Haircut", price: 0, member_price: 0, duration: 30, commission_rate: 10 });
       setShowAddModal(false);
       toast.success("Servis berjaya ditambahkan!");
     } catch (error) {
@@ -129,7 +129,7 @@ export default function ServicesPage() {
     try {
       const { error } = await supabase.from('services').update({
         name: editService.name, category: editService.category, price: editService.price,
-        member_price: editService.member_price, duration_minutes: editService.duration_minutes,
+        member_price: editService.member_price, duration: editService.duration,
         commission_rate: editService.commission_rate, updated_at: new Date().toISOString()
       }).eq('id', selectedService.id);
       if (error) throw error;
@@ -225,7 +225,7 @@ export default function ServicesPage() {
               setSelectedService(s);
               setEditService({
                 name: s.name, category: s.category || "", price: s.price,
-                member_price: s.memberPrice, duration_minutes: s.duration_minutes, commission_rate: s.commissionRate
+                member_price: s.memberPrice, duration: s.duration, commission_rate: s.commissionRate
               });
               setShowEditModal(true);
             }}
@@ -240,7 +240,7 @@ export default function ServicesPage() {
               setSelectedService(s);
               setEditService({
                 name: s.name, category: s.category || "", price: s.price,
-                member_price: s.memberPrice, duration_minutes: s.duration_minutes, commission_rate: s.commissionRate
+                member_price: s.memberPrice, duration: s.duration, commission_rate: s.commissionRate
               });
               setShowEditModal(true);
             }}

@@ -189,7 +189,7 @@ export function SMSNotificationSettings() {
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Account SID</label>
                                     <Input
                                         value={settings.twilio_sid}
-                                        onChange={(e: any) => setSettings({ ...settings, twilio_sid: e.target.value })}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings({ ...settings, twilio_sid: e.target.value })}
                                         placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
                                         className="h-12 border-2 border-gray-100 focus:border-blue-400 rounded-xl font-bold bg-white"
                                     />
@@ -200,7 +200,7 @@ export function SMSNotificationSettings() {
                                     <Input
                                         type="password"
                                         value={settings.twilio_token}
-                                        onChange={(e: any) => setSettings({ ...settings, twilio_token: e.target.value })}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings({ ...settings, twilio_token: e.target.value })}
                                         placeholder="••••••••••••••••••••••••••••••••"
                                         className="h-12 border-2 border-gray-100 focus:border-blue-400 rounded-xl font-bold bg-white"
                                     />
@@ -210,7 +210,7 @@ export function SMSNotificationSettings() {
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">Phone Number</label>
                                     <Input
                                         value={settings.twilio_phone}
-                                        onChange={(e: any) => setSettings({ ...settings, twilio_phone: e.target.value })}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings({ ...settings, twilio_phone: e.target.value })}
                                         placeholder="+1234567890"
                                         className="h-12 border-2 border-gray-100 focus:border-blue-400 rounded-xl font-bold bg-white"
                                     />
@@ -249,7 +249,7 @@ export function SMSNotificationSettings() {
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-2">n8n Webhook URL</label>
                                     <Input
                                         value={settings.n8n_webhook_url}
-                                        onChange={(e: any) => setSettings({ ...settings, n8n_webhook_url: e.target.value })}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSettings({ ...settings, n8n_webhook_url: e.target.value })}
                                         placeholder="https://your-n8n.com/webhook/xxxxx"
                                         className="h-12 border-2 border-gray-100 focus:border-green-400 rounded-xl font-bold bg-white"
                                     />
@@ -314,7 +314,7 @@ export function SMSNotificationSettings() {
                                 </div>
                                 <Textarea
                                     value={settings.provider === 'n8n' ? settings.whatsapp_confirm_template : settings.confirm_template}
-                                    onChange={(e: any) => setSettings({
+                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSettings({
                                         ...settings,
                                         [settings.provider === 'n8n' ? 'whatsapp_confirm_template' : 'confirm_template']: e.target.value
                                     })}
@@ -336,7 +336,7 @@ export function SMSNotificationSettings() {
                                 </div>
                                 <Textarea
                                     value={settings.provider === 'n8n' ? settings.whatsapp_reminder_template : settings.reminder_template}
-                                    onChange={(e: any) => setSettings({
+                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSettings({
                                         ...settings,
                                         [settings.provider === 'n8n' ? 'whatsapp_reminder_template' : 'reminder_template']: e.target.value
                                     })}
@@ -369,7 +369,7 @@ export function SMSNotificationSettings() {
                 <div className="p-6 bg-gray-50 rounded-[2rem] border border-gray-100">
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Format Payload n8n:</p>
                     <pre className="text-xs font-mono bg-gray-900 text-green-400 p-4 rounded-xl overflow-x-auto">
-{`{
+                        {`{
   "to": "+60123456789",
   "message": "Salam Ahmad! Tempahan anda disahkan...",
   "type": "whatsapp",
