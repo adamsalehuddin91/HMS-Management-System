@@ -19,11 +19,13 @@ interface UpcomingAppointment {
 interface UpcomingAppointmentsListProps {
     loading: boolean;
     upcomingAppointments: UpcomingAppointment[];
+    onRefresh?: () => void;
 }
 
 export function UpcomingAppointmentsList({
     loading,
-    upcomingAppointments
+    upcomingAppointments,
+    onRefresh
 }: UpcomingAppointmentsListProps) {
     const router = useRouter();
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export function UpcomingAppointmentsList({
             toast.error("Gagal batalkan tempahan");
         } else {
             toast.success("Tempahan dibatalkan");
-            window.location.reload();
+            onRefresh?.();
         }
     };
 

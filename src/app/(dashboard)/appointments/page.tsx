@@ -9,6 +9,7 @@ import { Button } from "@/components/ui";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
+import { logError } from "@/lib/utils/error-logger";
 
 // Utilities & Components
 import {
@@ -63,7 +64,7 @@ export default function AppointmentsPage() {
         .order('start_time', { ascending: true });
 
       if (error) {
-        console.error("Error fetching bookings:", error);
+        logError('Appointments Page', error);
       } else if (data) {
         setBookings(data);
         if (data.length > 0 && !selectedBooking) {

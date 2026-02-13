@@ -7,6 +7,7 @@ import { Button, Input, Card, CardContent } from "@/components/ui";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { logError } from "@/lib/utils/error-logger";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -57,7 +58,7 @@ export default function LoginPage() {
         router.push("/dashboard");
       }
     } catch (err: any) {
-      console.error("Login failed:", err);
+      logError('Login', err);
       toast.error(err.message || "Invalid email or password"); // Use toast for catch-all errors
     } finally {
       setLoading(false);

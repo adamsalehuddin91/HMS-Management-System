@@ -6,6 +6,7 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import type { Staff } from "@/types";
+import { logError } from "@/lib/utils/error-logger";
 
 // Sub-components
 import { StaffStatsHeader } from "./components/StaffStatsHeader";
@@ -50,13 +51,13 @@ export default function StaffPage() {
 
       const { data: staffData, error: staffError } = await supabase.from('staff').select('*').order('name');
       if (staffError) {
-        console.error("Error fetching staff:", staffError);
+        logError('Staff Page', staffError);
         setLoading(false);
         return;
       }
 
-      const { data: commissionData } = await supabase.from('commissions').select('staff_id, amount, sale_amount').eq('month', currentMonth);
-      const { data: saleItemsData } = await supabase.from('sale_items').select('stylist_id, quantity').eq('item_type', 'service').gte('created_at', startOfMonth);
+      const { data: commissionData } = await supabase.from('commissions').select('staff_id, amount, sale_amount').eq('month', currentMonth).neq('status', 'voided');
+      const { data: saleItemsData } = await supabase.from('sale_items').select('stylist_id, quantity, sales!inner(status)').eq('item_type', 'service').neq('sales.status', 'voided').gte('created_at', startOfMonth);
 
       const commissionsByStaff: Record<string, { totalCommission: number; totalSales: number }> = {};
       const servicesByStaff: Record<string, number> = {};
@@ -110,7 +111,7 @@ export default function StaffPage() {
       setShowAddModal(false);
       toast.success("Kakitangan berjaya ditambah!");
     } catch (error) {
-      console.error("Error adding staff:", error);
+      logError('Staff Page - Add', error);
       toast.error("Gagal menambah kakitangan.");
     } finally {
       setSavingStaff(false);
@@ -136,7 +137,7 @@ export default function StaffPage() {
       setShowEditModal(false);
       toast.success("Profil berjaya dikemaskini!");
     } catch (error) {
-      console.error("Error updating staff:", error);
+      logError('Staff Page - Update', error);
       toast.error("Gagal mengemaskini profil.");
     } finally {
       setSavingStaff(false);
@@ -166,7 +167,7 @@ export default function StaffPage() {
       setShowCommissionModal(false);
       toast.success(`Komisen berjaya dilaraskan: RM${commissionAdjustment.amount}`);
     } catch (error) {
-      console.error("Error adjusting commission:", error);
+      logError('Staff Page - Commission', error);
       toast.error("Gagal melaraskan komisen.");
     } finally {
       setSavingCommission(false);
@@ -200,7 +201,7 @@ export default function StaffPage() {
               setCommissionAdjustment({ type: "bonus", amount: 0, reason: "Performance Bonus" });
               setShowCommissionModal(true);
               const supabase = createClient();
-              const { data } = await supabase.from('commissions').select('*').eq('staff_id', selectedStaff.id).order('created_at', { ascending: false }).limit(10);
+              const { data } = await supabase.from('commissions').select('*').eq('staff_id', selectedStaff.id).neq('status', 'voided').order('created_at', { ascending: false }).limit(10);
               if (data) setCommissionHistory(data);
             }}
             openEditModal={() => {

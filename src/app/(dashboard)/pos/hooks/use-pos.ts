@@ -5,6 +5,7 @@ import { posService } from "@/lib/services/pos-service";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { Service, Product, Customer, PaymentMethod, User } from "@/types";
+import { logError } from "@/lib/utils/error-logger";
 
 export function usePOS(bookingId: string | null, user: User | null) {
     const router = useRouter();
@@ -123,7 +124,7 @@ export function usePOS(bookingId: string | null, user: User | null) {
                     }
                 }
             } catch (error) {
-                console.error("Error fetching POS data:", error);
+                logError('POS Hook - Fetch', error);
                 toast.error("Gagal memuatkan data POS.");
             } finally {
                 setLoading(false);
@@ -262,7 +263,7 @@ export function usePOS(bookingId: string | null, user: User | null) {
             });
             return saleId;
         } catch (error) {
-            console.error("Sale error:", error);
+            logError('POS Hook - Sale', error);
             throw error;
         }
     };

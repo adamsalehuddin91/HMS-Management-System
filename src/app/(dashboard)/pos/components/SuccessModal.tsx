@@ -8,6 +8,7 @@ import { Button, Card, CardContent } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { CartItem, StaffMember, getCommissionBreakdown } from "@/lib/utils/pos-calculations";
 import { downloadReceipt, generateWhatsAppReceipt, generateReceipt, ReceiptData, ReceiptItem } from "@/lib/utils/receipt-generator";
+import { logError } from "@/lib/utils/error-logger";
 
 interface SuccessModalProps {
     total: number;
@@ -93,7 +94,7 @@ export function SuccessModal({
         try {
             await downloadReceipt(receiptData);
         } catch (error) {
-            console.error("Failed to generate receipt:", error);
+            logError('Success Modal - Receipt', error);
             toast.error("Gagal menjana resit. Sila cuba lagi.");
         } finally {
             setDownloading(false);
@@ -144,7 +145,7 @@ export function SuccessModal({
                 toast.info("Resit telah dimuat turun. Sila lampirkan PDF secara manual di WhatsApp.");
             }
         } catch (error) {
-            console.error("Error sharing receipt:", error);
+            logError('Success Modal - Share', error);
             // Fallback on error too
             const url = `https://wa.me/${phone}?text=${message}`;
             window.open(url, "_blank");

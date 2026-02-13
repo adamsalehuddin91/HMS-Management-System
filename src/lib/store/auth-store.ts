@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { User } from "@/types";
 import { createClient } from "@/lib/supabase/client";
+import { logError } from "@/lib/utils/error-logger";
 
 interface AuthState {
   user: User | null;
@@ -49,7 +50,7 @@ export const useAuthStore = create<AuthState>()(
             set({ user: null, isAuthenticated: false, isLoading: false });
           }
         } catch (error) {
-          console.error("Session check failed", error);
+          logError('Auth Store', error);
           set({ user: null, isAuthenticated: false, isLoading: false });
         }
       },

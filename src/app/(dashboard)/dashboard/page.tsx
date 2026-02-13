@@ -6,6 +6,7 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { Header } from "@/components/layout/header";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui";
+import { logError } from "@/lib/utils/error-logger";
 
 // Sub-components
 import { StatCardsHeader } from "./components/StatCardsHeader";
@@ -89,7 +90,7 @@ export default function DashboardPage() {
             .select('total')
             .gte('created_at', startOfDay(date).toISOString())
             .lte('created_at', endOfDay(date).toISOString())
-            .eq('status', 'completed');
+            .neq('status', 'voided');
 
           if (userId) query = query.eq('created_by', userId);
           const { data } = await query;
@@ -116,7 +117,8 @@ export default function DashboardPage() {
         let commissionQuery = supabase
           .from('commissions')
           .select('amount')
-          .eq('month', currentMonth);
+          .eq('month', currentMonth)
+          .neq('status', 'voided');
 
         if (user?.role === "staff" && staffId) {
           commissionQuery = commissionQuery.eq('staff_id', staffId);
@@ -153,7 +155,7 @@ export default function DashboardPage() {
           .select('total, created_at')
           .gte('created_at', weekStart.toISOString())
           .lte('created_at', weekEnd.toISOString())
-          .eq('status', 'completed');
+          .neq('status', 'voided');
 
         if (user?.role === "staff") {
           weeklySalesQuery = weeklySalesQuery.eq('created_by', user.id);
@@ -174,8 +176,9 @@ export default function DashboardPage() {
         // Fetch top services
         const { data: topServicesData } = await supabase
           .from('sale_items')
-          .select('item_name')
+          .select('item_name, sales!inner(status)')
           .eq('item_type', 'service')
+          .neq('sales.status', 'voided')
           .gte('created_at', startOfCurrentMonth.toISOString());
 
         if (topServicesData) {
@@ -225,7 +228,7 @@ export default function DashboardPage() {
         }
 
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        logError('Dashboard Page', error);
       } finally {
         setLoading(false);
       }

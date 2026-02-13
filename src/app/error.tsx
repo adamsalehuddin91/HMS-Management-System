@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { AlertCircle } from "lucide-react";
+import { logError } from "@/lib/utils/error-logger";
 
 export default function GlobalError({
     error,
@@ -12,7 +13,7 @@ export default function GlobalError({
     reset: () => void;
 }) {
     useEffect(() => {
-        console.error("Global error:", error);
+        logError('Global Error', error);
     }, [error]);
 
     return (

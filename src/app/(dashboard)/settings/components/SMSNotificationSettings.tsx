@@ -6,6 +6,7 @@ import { Card, CardContent, Button, Input, Textarea } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { SMSSettings, DEFAULT_SMS_SETTINGS, SMSService } from "@/lib/services/sms-service";
+import { logError } from "@/lib/utils/error-logger";
 
 type Provider = 'none' | 'twilio' | 'n8n';
 
@@ -52,7 +53,7 @@ export function SMSNotificationSettings() {
             toast.success("Tetapan notifikasi telah disimpan");
             setTimeout(() => setShowSaved(false), 3000);
         } catch (err) {
-            console.error(err);
+            logError('SMS Settings', err);
             toast.error("Gagal menyimpan tetapan");
         } finally {
             setSaving(false);

@@ -8,6 +8,7 @@ import { useAuthStore } from "@/lib/store/auth-store";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import type { Service } from "@/types";
+import { logError } from "@/lib/utils/error-logger";
 
 // Sub-components
 import { ServiceCategoryTabs } from "./components/ServiceCategoryTabs";
@@ -67,7 +68,7 @@ export default function ServicesPage() {
       const supabase = createClient();
       const { data, error } = await supabase.from('services').select('*').order('name');
       if (error) {
-        console.error("Error fetching services:", error);
+        logError('Services Page', error);
       } else if (data) {
         setServices(data.map((s: any) => ({
           ...s,
@@ -112,7 +113,7 @@ export default function ServicesPage() {
       setShowAddModal(false);
       toast.success("Servis berjaya ditambahkan!");
     } catch (error) {
-      console.error("Error adding service:", error);
+      logError('Services Page - Add', error);
       toast.error("Gagal menambah servis.");
     } finally {
       setSavingService(false);
@@ -137,7 +138,7 @@ export default function ServicesPage() {
       setShowEditModal(false);
       toast.success("Servis berjaya dikemaskini!");
     } catch (error) {
-      console.error("Error updating service:", error);
+      logError('Services Page - Update', error);
       toast.error("Gagal mengemaskini servis.");
     } finally {
       setSavingService(false);
@@ -153,7 +154,7 @@ export default function ServicesPage() {
       setServices(prev => prev.map(s => s.id === service.id ? { ...s, isActive: newStatus, is_active: newStatus } : s));
       toast.success(`Servis berjaya ${newStatus ? 'diaktifkan' : 'diarkibkan'}!`);
     } catch (error) {
-      console.error("Error toggling serviceStatus:", error);
+      logError('Services Page - Toggle', error);
       toast.error("Gagal menukar status servis.");
     }
   };

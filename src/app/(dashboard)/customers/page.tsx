@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import type { Customer } from "@/types";
 import { format } from "date-fns";
+import { logError } from "@/lib/utils/error-logger";
 
 // Sub-components
 import { CustomerMasterList } from "./components/CustomerMasterList";
@@ -70,7 +71,7 @@ export default function CustomersPage() {
           .range(offset, offset + 999);
 
         if (error) {
-          console.error('Error fetching customers:', error);
+          logError('Customers Page', error);
           break;
         }
         if (!data || data.length === 0) break;
@@ -102,7 +103,7 @@ export default function CustomersPage() {
         .limit(50);
 
       if (error) {
-        console.error('Error fetching log:', error.message);
+        logError('Customers Page - Log', error.message);
         setActivityLog([]);
       } else {
         const enhancedData = await Promise.all(
@@ -163,7 +164,7 @@ export default function CustomersPage() {
       setAdjustmentAmount(100);
       setAdjustmentReason("Referral Bonus");
     } catch (error) {
-      console.error("Error updating balance:", error);
+      logError('Customers Page - Balance', error);
       toast.error("Gagal mengemaskini baki mata.");
     }
   };
@@ -190,7 +191,7 @@ export default function CustomersPage() {
       setNewCustomer({ name: "", phone: "", email: "", tier: "Normal", birthday: "", notes: "" });
       setShowNewCustomerModal(false);
     } catch (error) {
-      console.error("Error adding customer:", error);
+      logError('Customers Page - Add', error);
       toast.error("Gagal menambah pelanggan.");
     } finally {
       setSavingCustomer(false);
@@ -218,7 +219,7 @@ export default function CustomersPage() {
       setSelectedCustomer(data as Customer);
       setShowEditCustomerModal(false);
     } catch (error) {
-      console.error("Error updating customer:", error);
+      logError('Customers Page - Update', error);
       toast.error("Gagal mengemaskini pelanggan.");
     } finally {
       setSavingEdit(false);

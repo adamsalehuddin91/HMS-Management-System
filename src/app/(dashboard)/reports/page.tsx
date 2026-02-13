@@ -7,6 +7,7 @@ import { format, startOfDay, endOfDay, startOfWeek, startOfMonth, endOfMonth } f
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
+import { logError } from "@/lib/utils/error-logger";
 
 // Sub-components
 import { ReportsStatsHeader } from "./components/ReportsStatsHeader";
@@ -64,32 +65,32 @@ export default function ReportsPage() {
       const monthEnd = endOfMonth(selectedMonth);
 
       try {
-        const monthlySalesData = await fetchAll(supabase.from('sales').select('total').gte('created_at', monthStart.toISOString()).lte('created_at', monthEnd.toISOString()).eq('status', 'completed'));
+        const monthlySalesData = await fetchAll(supabase.from('sales').select('total').gte('created_at', monthStart.toISOString()).lte('created_at', monthEnd.toISOString()).neq('status', 'voided'));
         const monthly = monthlySalesData.reduce((sum: number, s: any) => sum + (s.total || 0), 0);
 
         let daily = 0; let weekly = 0;
         if (isCurrentMonth) {
-          const { data: dData } = await supabase.from('sales').select('total').gte('created_at', startOfDay(today).toISOString()).lte('created_at', endOfDay(today).toISOString()).eq('status', 'completed');
+          const { data: dData } = await supabase.from('sales').select('total').gte('created_at', startOfDay(today).toISOString()).lte('created_at', endOfDay(today).toISOString()).neq('status', 'voided');
           daily = dData?.reduce((s, x) => s + (x.total || 0), 0) || 0;
           const wStart = startOfWeek(today, { weekStartsOn: 1 });
-          const { data: wData } = await supabase.from('sales').select('total').gte('created_at', wStart.toISOString()).eq('status', 'completed');
+          const { data: wData } = await supabase.from('sales').select('total').gte('created_at', wStart.toISOString()).neq('status', 'voided');
           weekly = wData?.reduce((s, x) => s + (x.total || 0), 0) || 0;
         }
 
-        const overallData = await fetchAll(supabase.from('sales').select('total').eq('status', 'completed'));
+        const overallData = await fetchAll(supabase.from('sales').select('total').neq('status', 'voided'));
         const overall = overallData.reduce((sum: number, s: any) => sum + (s.total || 0), 0);
         setSalesData({ daily, weekly, monthly, overall });
 
-        const { count } = await supabase.from('sales').select('*', { count: 'exact', head: true }).gte('created_at', monthStart.toISOString()).lte('created_at', monthEnd.toISOString()).eq('status', 'completed');
+        const { count } = await supabase.from('sales').select('*', { count: 'exact', head: true }).gte('created_at', monthStart.toISOString()).lte('created_at', monthEnd.toISOString()).neq('status', 'voided');
         setTotalTransactions(count || 0);
 
-        const activeCustomerData = await fetchAll(supabase.from('sales').select('customer_id').gte('created_at', monthStart.toISOString()).lte('created_at', monthEnd.toISOString()).eq('status', 'completed').not('customer_id', 'is', null));
+        const activeCustomerData = await fetchAll(supabase.from('sales').select('customer_id').gte('created_at', monthStart.toISOString()).lte('created_at', monthEnd.toISOString()).neq('status', 'voided').not('customer_id', 'is', null));
         setActiveCustomers(new Set(activeCustomerData.map((s: any) => s.customer_id)).size);
 
         const { data: pointsData } = await supabase.from('points_transactions').select('points').eq('type', 'earned').gte('created_at', monthStart.toISOString()).lte('created_at', monthEnd.toISOString());
         setPointsIssued(pointsData?.reduce((s, p) => s + (p.points || 0), 0) || 0);
 
-        const topServicesData = await fetchAll(supabase.from('sale_items').select('item_name, total').eq('item_type', 'service').gte('created_at', monthStart.toISOString()).lte('created_at', monthEnd.toISOString()));
+        const topServicesData = await fetchAll(supabase.from('sale_items').select('item_name, total, sales!inner(status)').eq('item_type', 'service').neq('sales.status', 'voided').gte('created_at', monthStart.toISOString()).lte('created_at', monthEnd.toISOString()));
         if (topServicesData.length > 0) {
           const stats: { [key: string]: { count: number; revenue: number } } = {};
           topServicesData.forEach((item: any) => { if (!stats[item.item_name]) stats[item.item_name] = { count: 0, revenue: 0 }; stats[item.item_name].count++; stats[item.item_name].revenue += item.total || 0; });
@@ -97,7 +98,7 @@ export default function ReportsPage() {
         } else setTopServices([]);
 
         const monthStr = format(selectedMonth, 'yyyy-MM');
-        const { data: commData } = await supabase.from('commissions').select('staff_id, amount, sale_amount, staff:staff(name)').eq('month', monthStr);
+        const { data: commData } = await supabase.from('commissions').select('staff_id, amount, sale_amount, staff:staff(name)').eq('month', monthStr).neq('status', 'voided');
         if (commData && commData.length > 0) {
           const sStats: { [key: string]: { name: string; services: number; revenue: number; commission: number } } = {};
           commData.forEach((c: any) => {
@@ -115,7 +116,7 @@ export default function ReportsPage() {
           pointsEarned: Math.floor(txn.total), date: format(new Date(txn.created_at), 'MMM d, h:mm a'), status: txn.status,
         })));
 
-      } catch (error) { console.error(error); } finally { setLoading(false); }
+      } catch (error) { logError('Reports Page', error); } finally { setLoading(false); }
     };
     fetchReportData();
   }, [selectedMonth]);

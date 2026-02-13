@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Check, MessageCircle, MapPin } from "lucide-react";
 import { Card, CardContent, Badge, Button } from "@/components/ui";
 import { format } from "date-fns";
+import { useRouter } from "next/navigation";
 import { Service, BusinessInfo } from "@/lib/utils/booking-utils";
 
 interface BookingSuccessProps {
@@ -23,6 +24,8 @@ export function BookingSuccess({
     getWhatsAppLink,
     businessInfo
 }: BookingSuccessProps) {
+    const router = useRouter();
+
     return (
         <motion.div
             key="success"
@@ -82,7 +85,7 @@ export function BookingSuccess({
                 <Button
                     variant="ghost"
                     className="w-full text-gray-400 font-bold hover:text-gray-600 hover:bg-gray-50 rounded-2xl h-12"
-                    onClick={() => window.location.reload()}
+                    onClick={() => router.push('/book')}
                 >
                     Buat Tempahan Baru
                 </Button>

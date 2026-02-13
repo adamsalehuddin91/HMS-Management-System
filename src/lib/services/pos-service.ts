@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { logError } from "@/lib/utils/error-logger";
 import {
     CartItem,
     StaffMember,
@@ -41,41 +42,8 @@ export const posService = {
     }) {
         const supabase = createClient();
 
-        // 1. Create the sale record
-        const { data: saleData, error: saleError } = await supabase
-            .from('sales')
-            .insert({
-                customer_id: selectedCustomer?.id || null,
-                booking_id: currentBookingId || null,
-                subtotal: subtotal,
-                discount_amount: 0,
-                points_redeemed: actualPointsToRedeem,
-                points_discount: pointsDiscount,
-                deposit_deducted: actualDepositDeduction,
-                total: total,
-                payment_method: paymentMethod,
-                status: 'completed',
-                created_by: user?.id || null,
-                created_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-        if (saleError) throw saleError;
-
-        const saleId = saleData.id;
-
-        // 2. Update booking status to completed if from booking
-        if (currentBookingId) {
-            await supabase
-                .from('bookings')
-                .update({ status: 'completed' })
-                .eq('id', currentBookingId);
-        }
-
-        // 3. Create sale items and commissions
-        for (const item of cart) {
-            const isProduct = item.itemType === 'product';
+        // Prepare cart items with commission calculations
+        const cartItemsWithCommissions = cart.map(item => {
             const primaryStaff = staff.find(s => s.id === item.primaryStaffId);
             const secondaryStaff = item.secondaryStaffId ? staff.find(s => s.id === item.secondaryStaffId) : null;
 
@@ -83,138 +51,48 @@ export const posService = {
                 ? calculateItemCommission(item.price, item.quantity, primaryStaff, secondaryStaff || null, item.itemType)
                 : null;
 
-            // Insert sale item
-            const { data: saleItemData, error: saleItemError } = await supabase
-                .from('sale_items')
-                .insert({
-                    sale_id: saleId,
-                    item_type: item.itemType,
-                    item_id: item.id,
-                    item_name: item.name,
-                    stylist_id: item.primaryStaffId,
-                    quantity: item.quantity,
-                    price: item.price,
-                    unit_price: item.price,
-                    discount: 0,
-                    total: item.price * item.quantity,
-                    commission_rate: commission?.primaryRate || 0,
-                    commission_amount: commission?.primary || 0
-                })
-                .select()
-                .single();
+            return {
+                id: item.id,
+                itemType: item.itemType,
+                name: item.name,
+                primaryStaffId: item.primaryStaffId || null,
+                secondaryStaffId: item.secondaryStaffId || null,
+                quantity: item.quantity,
+                price: item.price,
+                commission: commission ? {
+                    primary: commission.primary,
+                    primaryRate: commission.primaryRate,
+                    secondary: commission.secondary || 0,
+                    secondaryRate: commission.secondaryRate || 0
+                } : null
+            };
+        });
 
-            if (saleItemError) throw saleItemError;
+        // Call the atomic RPC function
+        const { data, error } = await supabase.rpc('complete_sale', {
+            p_customer_id: selectedCustomer?.id || null,
+            p_booking_id: currentBookingId || null,
+            p_subtotal: subtotal,
+            p_discount_amount: 0,
+            p_points_redeemed: actualPointsToRedeem,
+            p_points_discount: pointsDiscount,
+            p_deposit_deducted: actualDepositDeduction,
+            p_total: total,
+            p_payment_method: paymentMethod,
+            p_created_by: user?.id || null,
+            p_cart_items: cartItemsWithCommissions,
+            p_products: products
+        });
 
-            // Deduct stock for products and record movement
-            if (isProduct) {
-                const product = products.find(p => p.id === item.id);
-                if (product) {
-                    const balanceBefore = product.stock_quantity;
-                    const balanceAfter = Math.max(0, balanceBefore - item.quantity);
-
-                    await supabase
-                        .from('products')
-                        .update({ stock_quantity: balanceAfter })
-                        .eq('id', item.id);
-
-                    // Record record movement (Stock History)
-                    await supabase.from('stock_movements').insert({
-                        product_id: item.id,
-                        type: 'out',
-                        quantity: -item.quantity,
-                        balance_before: balanceBefore,
-                        balance_after: balanceAfter,
-                        reason: 'POS Sale',
-                        reference_id: saleId,
-                        performed_by: user?.id || null
-                    });
-                }
+        if (error) {
+            // Check for specific error types
+            if (error.message?.includes('Insufficient stock')) {
+                throw new Error('One or more products have insufficient stock. Please refresh and try again.');
             }
-
-            // Insert commissions
-            if (commission && primaryStaff && saleItemData) {
-                const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
-
-                const commissionsToInsert = [];
-
-                if (commission.primary > 0) {
-                    commissionsToInsert.push({
-                        staff_id: primaryStaff.id,
-                        sale_id: saleId,
-                        sale_item_id: saleItemData.id,
-                        service_name: item.name,
-                        sale_amount: item.price * item.quantity,
-                        commission_rate: commission.primaryRate,
-                        amount: commission.primary,
-                        month: currentMonth,
-                        is_paid: false
-                    });
-                }
-
-                if (!isProduct && secondaryStaff && commission.secondary > 0) {
-                    commissionsToInsert.push({
-                        staff_id: secondaryStaff.id,
-                        sale_id: saleId,
-                        sale_item_id: saleItemData.id,
-                        service_name: item.name,
-                        sale_amount: item.price * item.quantity,
-                        commission_rate: commission.secondaryRate,
-                        amount: commission.secondary,
-                        month: currentMonth,
-                        is_paid: false
-                    });
-                }
-
-                if (commissionsToInsert.length > 0) {
-                    await supabase.from('commissions').insert(commissionsToInsert);
-                }
-            }
+            throw error;
         }
 
-        // 4. Update customer points
-        if (selectedCustomer) {
-            const netPointsChange = pointsEarned - actualPointsToRedeem;
-            const newBalance = (selectedCustomer.points_balance || 0) + netPointsChange;
-
-            await supabase.from('customers')
-                .update({
-                    points_balance: newBalance,
-                    visit_count: (selectedCustomer.visit_count || 0) + 1,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', selectedCustomer.id);
-
-            // Record points transactions
-            const pointsTransactions = [];
-            if (actualPointsToRedeem > 0) {
-                pointsTransactions.push({
-                    customer_id: selectedCustomer.id,
-                    type: 'redeemed',
-                    points: -actualPointsToRedeem,
-                    balance_after: (selectedCustomer.points_balance || 0) - actualPointsToRedeem,
-                    reference_id: saleId,
-                    reason: 'POS Redemption',
-                    performed_by: user?.id || null
-                });
-            }
-            if (pointsEarned > 0) {
-                pointsTransactions.push({
-                    customer_id: selectedCustomer.id,
-                    type: 'earned',
-                    points: pointsEarned,
-                    balance_after: newBalance,
-                    reference_id: saleId,
-                    reason: 'POS Purchase',
-                    performed_by: user?.id || null
-                });
-            }
-
-            if (pointsTransactions.length > 0) {
-                await supabase.from('points_transactions').insert(pointsTransactions);
-            }
-        }
-
-        return { saleId };
+        return { saleId: data.saleId };
     },
 
     /**
@@ -243,7 +121,7 @@ export const posService = {
             .single();
 
         if (fetchError) {
-            console.error("Fetch sale error:", fetchError);
+            logError('POS Service - Void Sale', fetchError);
             throw fetchError;
         }
         if (!sale) throw new Error("Sale not found");
@@ -261,7 +139,7 @@ export const posService = {
             .eq('id', saleId);
 
         if (updateSaleError) {
-            console.error("Update sale status error:", updateSaleError);
+            logError('POS Service - Void Sale', updateSaleError);
             throw updateSaleError;
         }
 

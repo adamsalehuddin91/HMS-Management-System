@@ -7,6 +7,7 @@ import { Card, CardContent, Badge, Button } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { downloadReceipt, generateReceipt, generateWhatsAppReceipt, ReceiptData, ReceiptItem } from "@/lib/utils/receipt-generator";
+import { logError } from "@/lib/utils/error-logger";
 
 interface RecentTransaction {
     id: string;
@@ -144,7 +145,7 @@ export function RecentTransactionsList({
                 }
             }
         } catch (error) {
-            console.error("Receipt error:", error);
+            logError('Recent Transactions - Receipt', error);
             toast.error("Gagal menjana resit.");
         } finally {
             setLoadingReceiptId(null);

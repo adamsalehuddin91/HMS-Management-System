@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { NotificationService } from "@/lib/services/notification-service";
 import { createClient } from "@supabase/supabase-js";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { logError } from "@/lib/utils/error-logger";
 
 // Zod schema for booking validation
 const bookingSchema = z.object({
@@ -34,16 +36,13 @@ const bookingSchema = z.object({
 });
 
 // Use service role for public bookings (bypasses RLS)
-// SERVICE_ROLE_KEY is required - do not fall back to anon key
+// SERVICE_ROLE_KEY is REQUIRED - no fallback to anon key
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!serviceRoleKey) {
-  console.error("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is not configured");
-}
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Only create client if key exists (will check at runtime)
+const supabaseAdmin = serviceRoleKey
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceRoleKey)
+  : null;
 
 /**
  * Validate request origin to prevent CSRF attacks.
@@ -82,6 +81,32 @@ function validateOrigin(request: NextRequest): boolean {
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting: 5 requests per 15 minutes per IP
+    const clientIp = getClientIp(request);
+    const rateLimit = checkRateLimit(clientIp, {
+      maxRequests: 5,
+      windowMs: 15 * 60 * 1000, // 15 minutes
+    });
+
+    if (!rateLimit.success) {
+      const resetDate = new Date(rateLimit.resetTime);
+      return NextResponse.json(
+        {
+          error: "Too many booking requests. Please try again later.",
+          retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000),
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+            "X-RateLimit-Limit": rateLimit.limit.toString(),
+            "X-RateLimit-Remaining": rateLimit.remaining.toString(),
+            "X-RateLimit-Reset": resetDate.toISOString(),
+          },
+        }
+      );
+    }
+
     // CSRF protection: validate request origin
     if (!validateOrigin(request)) {
       return NextResponse.json(
@@ -90,9 +115,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Warn if service role key is missing (use anon key as degraded fallback)
-    if (!serviceRoleKey) {
-      console.error("WARNING: Using anon key for booking - configure SUPABASE_SERVICE_ROLE_KEY");
+    // Runtime check for service role key
+    if (!serviceRoleKey || !supabaseAdmin) {
+      logError('Booking API', 'CRITICAL: SUPABASE_SERVICE_ROLE_KEY is not configured');
+      return NextResponse.json(
+        { error: "Server configuration error. Please contact support." },
+        { status: 500 }
+      );
     }
 
     const body = await request.json();
@@ -143,12 +172,32 @@ export async function POST(request: NextRequest) {
         .single();
 
       if (customerError) {
-        return NextResponse.json(
-          { error: "Failed to create customer" },
-          { status: 500 }
-        );
+        // Handle unique constraint violation (race condition)
+        if (customerError.code === '23505') {
+          // Duplicate phone number - fetch the existing customer
+          const { data: existingCustomerRetry } = await supabaseAdmin
+            .from("customers")
+            .select("id")
+            .eq("phone", customerPhone)
+            .single();
+
+          if (existingCustomerRetry) {
+            customerId = existingCustomerRetry.id;
+          } else {
+            return NextResponse.json(
+              { error: "Failed to create or find customer" },
+              { status: 500 }
+            );
+          }
+        } else {
+          return NextResponse.json(
+            { error: "Failed to create customer" },
+            { status: 500 }
+          );
+        }
+      } else {
+        customerId = newCustomer.id;
       }
-      customerId = newCustomer.id;
     }
 
     // Check for duplicate booking (same customer + date + time)
