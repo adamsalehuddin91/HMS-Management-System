@@ -111,11 +111,12 @@ export function RecentReceipts({ isOpen, onClose }: RecentReceiptsProps) {
             const { data } = await supabase
                 .from("sales")
                 .select("id, total, payment_method, status, created_at, customer:customers(name, phone)")
-                .eq("status", "completed")
+                .neq("status", "voided")
                 .order("created_at", { ascending: false })
                 .limit(10);
 
             if (data) {
+                console.log('Recent sales data:', data.map(s => ({ id: s.id.slice(0, 8), status: s.status })));
                 setSales(data.map((s: any) => ({
                     id: s.id,
                     shortId: s.id.slice(0, 8).toUpperCase(),
