@@ -66,7 +66,7 @@ export default function NewBookingPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const [notes, setNotes] = useState("");
-  const [requireDeposit, setRequireDeposit] = useState(true);
+  const [requireDeposit, setRequireDeposit] = useState(false);
 
   // Fetch data
   useEffect(() => {

@@ -34,7 +34,9 @@ export function usePOS(bookingId: string | null, user: User | null) {
     const [businessInfo, setBusinessInfo] = useState({
         name: "HMS Salon",
         phone: "-",
-        address: ""
+        address: "",
+        bookingUrl: "https://hms-salon.vercel.app/book",
+        googleReviewUrl: "https://www.google.com/search?sca_esv=369040512b9c6d40&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOYWAuYTwosPcodcQNf31IJH5f8k2nzY7Xy6SkvkU6n2WcrK9Zdiqa6Asxm3B5PS1HIIl7_ZehMuo9ymcOFqOd7HppJAsBloexqhbYQb4o9UVqhJqNQ%3D%3D&q=HAIDA+MUSLIMAH+SALON+Ulasan",
     });
 
     const supabase = createClient();
@@ -71,7 +73,9 @@ export function usePOS(bookingId: string | null, user: User | null) {
                     setBusinessInfo({
                         name: info.name || "HMS Salon",
                         phone: info.phone || info.whatsapp || "-",
-                        address: info.address || ""
+                        address: info.address || "",
+                        bookingUrl: info.booking_url || "https://hms-salon.vercel.app/book",
+                        googleReviewUrl: info.google_review_url || "https://www.google.com/search?q=HAIDA+MUSLIMAH+SALON+Ulasan",
                     });
                 }
 

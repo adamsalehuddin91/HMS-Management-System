@@ -9,6 +9,8 @@ interface BusinessInfo {
     email: string;
     whatsapp: string;
     address: string;
+    booking_url?: string;
+    google_review_url?: string;
 }
 
 interface BusinessSettingsProps {
@@ -74,6 +76,32 @@ export function BusinessSettings({
                         onChange={(e) => setBusinessInfo({ ...businessInfo, address: e.target.value })}
                         className="h-14 bg-gray-50 border-none rounded-2xl focus-visible:ring-1 focus-visible:ring-[#2e7d32]/20 font-bold"
                     />
+                </div>
+            </div>
+
+            <div className="pt-4">
+                <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2e7d32] mb-1">Pautan Resit</h3>
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-6">Pautan ini akan dipaparkan pada resit WhatsApp & PDF</p>
+
+                <div className="grid grid-cols-1 gap-8">
+                    <div className="space-y-4">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Link Tempahan Online (Public Booking)</label>
+                        <Input
+                            value={businessInfo.booking_url || ""}
+                            onChange={(e) => setBusinessInfo({ ...businessInfo, booking_url: e.target.value })}
+                            placeholder="https://yourdomain.com/book"
+                            className="h-14 bg-gray-50 border-none rounded-2xl focus-visible:ring-1 focus-visible:ring-[#2e7d32]/20 font-bold text-sm"
+                        />
+                    </div>
+                    <div className="space-y-4">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Google Business Review Link</label>
+                        <Input
+                            value={businessInfo.google_review_url || ""}
+                            onChange={(e) => setBusinessInfo({ ...businessInfo, google_review_url: e.target.value })}
+                            placeholder="https://g.page/r/your-business/review"
+                            className="h-14 bg-gray-50 border-none rounded-2xl focus-visible:ring-1 focus-visible:ring-[#2e7d32]/20 font-bold text-sm"
+                        />
+                    </div>
                 </div>
             </div>
 

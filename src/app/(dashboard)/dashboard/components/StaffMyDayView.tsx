@@ -29,7 +29,7 @@ export function StaffMyDayView({
     stats,
     upcomingAppointments
 }: StaffMyDayViewProps) {
-    const todayApts = upcomingAppointments.filter(a => a.time.includes("Today"));
+    const todayApts = upcomingAppointments.filter(a => a.time.includes("Hari Ini"));
 
     return (
         <div className="min-h-screen bg-gray-50/50">

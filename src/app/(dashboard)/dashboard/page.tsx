@@ -195,7 +195,7 @@ export default function DashboardPage() {
         let upcomingQuery = supabase
           .from('bookings')
           .select(`
-            id, booking_date, start_time, status,
+            id, booking_date, start_time, booking_time, status,
             customer:customers(name), service:services(name)
           `)
           .gte('booking_date', format(today, 'yyyy-MM-dd'))
@@ -210,17 +210,20 @@ export default function DashboardPage() {
 
         const { data: upcomingData } = await upcomingQuery;
         if (upcomingData) {
+          const todayStr = format(today, 'yyyy-MM-dd');
+          const tomorrowStr = format(subDays(today, -1), 'yyyy-MM-dd');
           const appointments = upcomingData.map((apt: any) => {
-            const bookingDate = new Date(apt.booking_date);
-            const isToday = format(bookingDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
-            const isTomorrow = format(bookingDate, 'yyyy-MM-dd') === format(subDays(today, -1), 'yyyy-MM-dd');
+            const dateStr = apt.booking_date;
+            const timeStr = (apt.start_time || apt.booking_time || '00:00').slice(0, 5);
+            const isToday = dateStr === todayStr;
+            const isTomorrow = dateStr === tomorrowStr;
             return {
               id: apt.id,
               customer: apt.customer?.name || 'Customer',
               service: apt.service?.name || 'Service',
-              time: isToday ? `Hari Ini, ${apt.start_time.slice(0, 5)}` :
-                isTomorrow ? `Esok, ${apt.start_time.slice(0, 5)}` :
-                  `${format(bookingDate, 'MMM d')}, ${apt.start_time.slice(0, 5)}`,
+              time: isToday ? `Hari Ini, ${timeStr}` :
+                isTomorrow ? `Esok, ${timeStr}` :
+                  `${format(new Date(dateStr + 'T00:00:00'), 'MMM d')}, ${timeStr}`,
               status: apt.status,
             };
           });

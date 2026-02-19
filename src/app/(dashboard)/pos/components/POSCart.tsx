@@ -5,6 +5,7 @@ import { Search, X, Plus, Minus, Tag, Package, User, Scissors } from "lucide-rea
 import { Button, Card, CardContent, Input, Avatar } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { CartItem as CartItemType, StaffMember, calculateItemCommission } from "@/lib/utils/pos-calculations";
+import { useAuthStore } from "@/lib/store/auth-store";
 
 interface POSCustomer {
     id: string;
@@ -323,11 +324,13 @@ function CartItem({
     removeFromCart: (id: string, itemType: 'service' | 'product') => void;
     updateStaff: (id: string, staffId: string, type: 'primary' | 'secondary', itemType: 'service' | 'product') => void;
 }) {
+    const { user } = useAuthStore();
+    const isAdmin = user?.role === 'admin';
     const primaryStaff = staff.find(s => s.id === item.primaryStaffId);
     const secondaryStaff = item.secondaryStaffId ? staff.find(s => s.id === item.secondaryStaffId) : null;
     const isProduct = item.itemType === 'product';
 
-    const commission = primaryStaff
+    const commission = isAdmin && primaryStaff
         ? calculateItemCommission(item.price, item.quantity, primaryStaff, secondaryStaff || null, item.itemType)
         : null;
 

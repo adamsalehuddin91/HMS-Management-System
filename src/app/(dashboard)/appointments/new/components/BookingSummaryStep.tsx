@@ -1,6 +1,6 @@
 "use client";
 
-import { User, Scissors, Calendar as CalendarIcon, Clock, Check, AlertCircle } from "lucide-react";
+import { User, Scissors, Calendar as CalendarIcon, Clock, Check } from "lucide-react";
 import { Card, CardContent, Badge } from "@/components/ui";
 import { format } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
@@ -115,29 +115,6 @@ export function BookingSummaryStep({
                         />
                     </div>
 
-                    <div className="p-6 bg-gray-900 rounded-[2rem] text-white shadow-xl flex items-center justify-between group overflow-hidden relative">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/10 transition-all" />
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-1">
-                                <p className="text-[10px] font-black text-green-400 uppercase tracking-widest">Deposit Diperlukan</p>
-                                <AlertCircle className="h-3 w-3 text-green-400/50" />
-                            </div>
-                            <p className="text-sm font-bold text-gray-400">25% daripada jumlah harga</p>
-                        </div>
-                        <div className="flex items-center gap-4 relative z-10">
-                            <div className="text-right">
-                                <p className="text-2xl font-black tracking-tighter">{formatCurrency(depositAmount)}</p>
-                            </div>
-                            <button
-                                onClick={() => setRequireDeposit(!requireDeposit)}
-                                className={`w-14 h-8 rounded-2xl transition-all p-1 ${requireDeposit ? "bg-[#2e7d32]" : "bg-gray-700"
-                                    }`}
-                            >
-                                <div className={`h-6 w-6 rounded-xl bg-white shadow-lg transition-transform ${requireDeposit ? "translate-x-6" : "translate-x-0"
-                                    }`} />
-                            </button>
-                        </div>
-                    </div>
                 </CardContent>
             </Card>
         </div>

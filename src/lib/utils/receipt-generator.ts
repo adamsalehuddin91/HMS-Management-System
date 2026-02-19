@@ -36,6 +36,8 @@ export interface ReceiptData {
   pointsEarned: number;
   cashReceived?: number;
   change?: number;
+  bookingUrl?: string;
+  googleReviewUrl?: string;
 }
 
 /**
@@ -371,7 +373,7 @@ export async function printReceipt(data: ReceiptData): Promise<void> {
 }
 
 /**
- * Generate WhatsApp formatted receipt text
+ * Generate WhatsApp formatted receipt text (plain text)
  */
 export function generateWhatsAppReceipt(data: ReceiptData): string {
   const itemsList = data.items.map(item => {
@@ -385,7 +387,12 @@ export function generateWhatsAppReceipt(data: ReceiptData): string {
     `Bayaran: ${data.paymentMethod.toUpperCase()}`
   ].filter(Boolean).join('\n');
 
-  const message = `*RESIT PEMBAYARAN - ${data.businessName.toUpperCase()}*
+  const footerLinks = [
+    data.bookingUrl ? `\n📅 *Buat Temujanji Seterusnya:*\n${data.bookingUrl}` : '',
+    data.googleReviewUrl ? `\n⭐ *Review Kami di Google:*\n${data.googleReviewUrl}` : '',
+  ].filter(Boolean).join('\n');
+
+  return `*RESIT PEMBAYARAN - ${data.businessName.toUpperCase()}*
 Tarikh: ${format(data.date, "dd/MM/yyyy HH:mm")}
 No. Resit: ${data.receiptNo}
 --------------------------------
@@ -394,8 +401,6 @@ ${itemsList}
 --------------------------------
 ${totalSection}
 
-*Terima kasih!*
-Sila simpan resit ini sebagai rujukan.`;
-
-  return encodeURIComponent(message);
+*Terima kasih kerana memilih ${data.businessName}!* 🙏
+Kami menghargai sokongan anda.${footerLinks}`;
 }

@@ -7,6 +7,7 @@ import { Check, Plus, ArrowLeft, Download, Loader2, MessageCircle } from "lucide
 import { Button, Card, CardContent } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { CartItem, StaffMember, getCommissionBreakdown } from "@/lib/utils/pos-calculations";
+import { useAuthStore } from "@/lib/store/auth-store";
 import { downloadReceipt, generateWhatsAppReceipt, generateReceipt, ReceiptData, ReceiptItem } from "@/lib/utils/receipt-generator";
 import { logError } from "@/lib/utils/error-logger";
 
@@ -26,6 +27,8 @@ interface SuccessModalProps {
         name: string;
         phone: string;
         address?: string;
+        bookingUrl?: string;
+        googleReviewUrl?: string;
     };
     handleNewSale: () => void;
     router: any;
@@ -48,6 +51,8 @@ export function SuccessModal({
     router
 }: SuccessModalProps) {
     const [downloading, setDownloading] = useState(false);
+    const { user } = useAuthStore();
+    const isAdmin = user?.role === 'admin';
     const commissionBreakdown = getCommissionBreakdown(cart, staff);
     const totalCommission = commissionBreakdown.reduce((sum, i) => sum + i.amount, 0);
     const receiptNo = saleId.slice(0, 8).toUpperCase();
@@ -81,7 +86,9 @@ export function SuccessModal({
             depositDeducted,
             total,
             paymentMethod,
-            pointsEarned
+            pointsEarned,
+            bookingUrl: businessInfo.bookingUrl,
+            googleReviewUrl: businessInfo.googleReviewUrl,
         };
     }, [
         cart, staff, receiptNo, businessInfo, selectedCustomer,
@@ -102,7 +109,8 @@ export function SuccessModal({
     };
 
     const handleWhatsAppReceipt = async () => {
-        const message = generateWhatsAppReceipt(receiptData);
+        const plainMessage = generateWhatsAppReceipt(receiptData);
+        const encodedMessage = encodeURIComponent(plainMessage);
         let phone = "";
 
         // Try to use customer phone if available
@@ -132,14 +140,14 @@ export function SuccessModal({
                 await navigator.share({
                     files: [file],
                     title: `Resit ${receiptData.receiptNo}`,
-                    text: message,
+                    text: plainMessage,
                 });
             } else {
                 // Fallback: Download PDF & Open WhatsApp
                 await downloadReceipt(receiptData);
 
                 // Construct WhatsApp URL
-                const url = `https://wa.me/${phone}?text=${message}`;
+                const url = `https://wa.me/${phone}?text=${encodedMessage}`;
                 window.open(url, "_blank");
 
                 toast.info("Resit telah dimuat turun. Sila lampirkan PDF secara manual di WhatsApp.");
@@ -147,7 +155,7 @@ export function SuccessModal({
         } catch (error) {
             logError('Success Modal - Share', error);
             // Fallback on error too
-            const url = `https://wa.me/${phone}?text=${message}`;
+            const url = `https://wa.me/${phone}?text=${encodedMessage}`;
             window.open(url, "_blank");
         } finally {
             setDownloading(false);
@@ -211,31 +219,33 @@ export function SuccessModal({
                                 </div>
                             )}
 
-                            {/* Commission Breakdown */}
-                            <div className="p-5 md:p-6 border border-gray-100 rounded-3xl bg-white shadow-sm">
-                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Staff Payout Summary</h4>
-                                <div className="space-y-4">
-                                    {commissionBreakdown.map((item) => (
-                                        <div key={item.staffId} className="flex justify-between items-center group">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-2 w-2 rounded-full bg-[#2e7d32] opacity-20 group-hover:opacity-100 transition-opacity" />
-                                                <div>
-                                                    <p className="text-xs font-bold text-gray-700">{item.staffName}</p>
-                                                    <p className="text-[9px] text-gray-400 font-bold uppercase">{item.role}</p>
+                            {/* Commission Breakdown - Admin only */}
+                            {isAdmin && (
+                                <div className="p-5 md:p-6 border border-gray-100 rounded-3xl bg-white shadow-sm">
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Staff Payout Summary</h4>
+                                    <div className="space-y-4">
+                                        {commissionBreakdown.map((item) => (
+                                            <div key={item.staffId} className="flex justify-between items-center group">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-2 w-2 rounded-full bg-[#2e7d32] opacity-20 group-hover:opacity-100 transition-opacity" />
+                                                    <div>
+                                                        <p className="text-xs font-bold text-gray-700">{item.staffName}</p>
+                                                        <p className="text-[9px] text-gray-400 font-bold uppercase">{item.role}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm font-black text-[#2e7d32]">{formatCurrency(item.amount)}</p>
+                                                    <p className="text-[9px] text-gray-400 font-bold">{item.rate}% commission</p>
                                                 </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-sm font-black text-[#2e7d32]">{formatCurrency(item.amount)}</p>
-                                                <p className="text-[9px] text-gray-400 font-bold">{item.rate}% commission</p>
-                                            </div>
+                                        ))}
+                                        <div className="flex justify-between pt-4 border-t border-gray-100">
+                                            <span className="text-xs font-black text-gray-800 uppercase tracking-widest">Total Commission</span>
+                                            <span className="text-sm font-black text-[#2e7d32]">{formatCurrency(totalCommission)}</span>
                                         </div>
-                                    ))}
-                                    <div className="flex justify-between pt-4 border-t border-gray-100">
-                                        <span className="text-xs font-black text-gray-800 uppercase tracking-widest">Total Commission</span>
-                                        <span className="text-sm font-black text-[#2e7d32]">{formatCurrency(totalCommission)}</span>
                                     </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Action Buttons */}
                             <div className="space-y-3 pb-2">

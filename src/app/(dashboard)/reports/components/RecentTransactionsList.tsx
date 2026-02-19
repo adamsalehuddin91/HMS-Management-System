@@ -99,6 +99,8 @@ async function fetchReceiptData(saleId: string): Promise<ReceiptData | null> {
         total: sale.total,
         paymentMethod: sale.payment_method || "cash",
         pointsEarned: Math.floor(sale.total),
+        bookingUrl: bizInfo?.booking_url || "https://hms-salon.vercel.app/book",
+        googleReviewUrl: bizInfo?.google_review_url || "https://www.google.com/search?sca_esv=369040512b9c6d40&si=AL3DRZEsmMGCryMMFSHJ3StBhOdZ2-6yYkXd_doETEE1OR-qOYWAuYTwosPcodcQNf31IJH5f8k2nzY7Xy6SkvkU6n2WcrK9Zdiqa6Asxm3B5PS1HIIl7_ZehMuo9ymcOFqOd7HppJAsBloexqhbYQb4o9UVqhJqNQ%3D%3D&q=HAIDA+MUSLIMAH+SALON+Ulasan",
     };
 }
 
@@ -126,14 +128,15 @@ export function RecentTransactionsList({
                 await downloadReceipt(data);
             } else {
                 // WhatsApp share
-                const message = generateWhatsAppReceipt(data);
+                const plainMessage = generateWhatsAppReceipt(data);
+                const encodedMessage = encodeURIComponent(plainMessage);
                 const doc = await generateReceipt(data);
                 const pdfBlob = doc.output("blob");
                 const file = new File([pdfBlob], `resit-${data.receiptNo}.pdf`, { type: "application/pdf" });
 
                 // @ts-ignore
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: `Resit ${data.receiptNo}`, text: decodeURIComponent(message) });
+                    await navigator.share({ files: [file], title: `Resit ${data.receiptNo}`, text: plainMessage });
                 } else {
                     await downloadReceipt(data);
                     let phone = "";
@@ -141,7 +144,7 @@ export function RecentTransactionsList({
                         const raw = data.customerPhone.replace(/\D/g, "");
                         phone = raw.startsWith("1") ? "60" + raw : raw.startsWith("01") ? "6" + raw : raw;
                     }
-                    window.open(`https://wa.me/${phone}?text=${message}`, "_blank");
+                    window.open(`https://wa.me/${phone}?text=${encodedMessage}`, "_blank");
                 }
             }
         } catch (error) {

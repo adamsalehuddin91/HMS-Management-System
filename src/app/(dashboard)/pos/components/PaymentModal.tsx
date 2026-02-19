@@ -5,6 +5,7 @@ import { X, Banknote, QrCode, CreditCard, Loader2 } from "lucide-react";
 import { Button, Card, CardContent } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { CartItem, StaffMember, getCommissionBreakdown } from "@/lib/utils/pos-calculations";
+import { useAuthStore } from "@/lib/store/auth-store";
 
 import type { PaymentMethod } from "@/types";
 
@@ -33,6 +34,8 @@ export function PaymentModal({
     cart,
     staff
 }: PaymentModalProps) {
+    const { user } = useAuthStore();
+    const isAdmin = user?.role === 'admin';
     const commissionBreakdown = getCommissionBreakdown(cart, staff);
     const totalCommission = commissionBreakdown.reduce((sum, i) => sum + i.amount, 0);
 
@@ -109,25 +112,27 @@ export function PaymentModal({
                                 )}
                             </div>
 
-                            {/* Commission Preview */}
-                            <div className="p-6 bg-[#2e7d32]/5 rounded-3xl border border-[#2e7d32]/10">
-                                <h4 className="text-[10px] font-black text-[#2e7d32] uppercase tracking-widest mb-4">Staff Commission Estimate</h4>
-                                <div className="space-y-3">
-                                    {commissionBreakdown.map((item) => (
-                                        <div key={item.staffId} className="flex justify-between items-center">
-                                            <div>
-                                                <p className="text-xs font-bold text-gray-700">{item.staffName}</p>
-                                                <p className="text-[9px] text-gray-400 font-bold uppercase">{item.role}</p>
+                            {/* Commission Preview - Admin only */}
+                            {isAdmin && (
+                                <div className="p-6 bg-[#2e7d32]/5 rounded-3xl border border-[#2e7d32]/10">
+                                    <h4 className="text-[10px] font-black text-[#2e7d32] uppercase tracking-widest mb-4">Staff Commission Estimate</h4>
+                                    <div className="space-y-3">
+                                        {commissionBreakdown.map((item) => (
+                                            <div key={item.staffId} className="flex justify-between items-center">
+                                                <div>
+                                                    <p className="text-xs font-bold text-gray-700">{item.staffName}</p>
+                                                    <p className="text-[9px] text-gray-400 font-bold uppercase">{item.role}</p>
+                                                </div>
+                                                <span className="text-sm font-black text-gray-800">{formatCurrency(item.amount)}</span>
                                             </div>
-                                            <span className="text-sm font-black text-gray-800">{formatCurrency(item.amount)}</span>
+                                        ))}
+                                        <div className="flex justify-between pt-3 border-t border-[#2e7d32]/10">
+                                            <span className="text-[10px] font-black text-[#2e7d32] uppercase tracking-widest">Total Payout</span>
+                                            <span className="text-sm font-black text-[#2e7d32]">{formatCurrency(totalCommission)}</span>
                                         </div>
-                                    ))}
-                                    <div className="flex justify-between pt-3 border-t border-[#2e7d32]/10">
-                                        <span className="text-[10px] font-black text-[#2e7d32] uppercase tracking-widest">Total Payout</span>
-                                        <span className="text-sm font-black text-[#2e7d32]">{formatCurrency(totalCommission)}</span>
                                     </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Pay Button */}
                             <Button
