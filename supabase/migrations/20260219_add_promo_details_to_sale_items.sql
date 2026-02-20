@@ -173,7 +173,7 @@ BEGIN
         FROM public.customers
         WHERE id = p_customer_id;
 
-        v_new_points_balance := COALESCE(v_current_points_balance, 0) + v_net_points_change;
+        v_new_points_balance := GREATEST(0, COALESCE(v_current_points_balance, 0) + v_net_points_change);
 
         -- Update customer
         UPDATE public.customers

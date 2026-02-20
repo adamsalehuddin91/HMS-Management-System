@@ -63,69 +63,91 @@ export function ServiceGrid({
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
             {services.map((service) => (
                 <Card
                     key={service.id}
-                    className={`border-none shadow-xl bg-white rounded-[2rem] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-[#2e7d32]/5 group ${!service.isActive ? "grayscale opacity-60" : ""}`}
+                    className={`border-none shadow-lg bg-white rounded-2xl overflow-hidden transition-all duration-500 hover:shadow-xl hover:shadow-[#2e7d32]/5 group ${!service.isActive ? "grayscale opacity-60" : ""}`}
                 >
-                    <CardContent className="p-8">
-                        <div className="flex items-start justify-between mb-8">
+                    <CardContent className="p-5">
+                        <div className="flex items-start justify-between mb-4">
                             <div className="relative">
                                 <img
                                     src={service.image}
                                     alt={service.name}
-                                    className="h-16 w-16 rounded-2xl object-cover shadow-lg group-hover:scale-110 transition-transform duration-500"
+                                    className="h-12 w-12 rounded-xl object-cover shadow-md group-hover:scale-110 transition-transform duration-500"
                                 />
-                                <div className="absolute -top-2 -right-2">
+                                <div className="absolute -top-1.5 -right-1.5">
                                     <Badge
                                         variant={service.isActive ? "success" : "default"}
-                                        className="h-5 text-[8px] font-black uppercase tracking-widest px-1.5 rounded-lg border-2 border-white"
+                                        className="h-4 text-[7px] font-black uppercase tracking-widest px-1 rounded-md border-2 border-white"
                                     >
                                         {service.isActive ? "Aktif" : "Arkib"}
                                     </Badge>
                                 </div>
                             </div>
-                            <button className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-gray-50 text-gray-300 transition-colors">
-                                <MoreVertical className="h-5 w-5" />
+                            <button className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-gray-50 text-gray-300 transition-colors">
+                                <MoreVertical className="h-4 w-4" />
                             </button>
                         </div>
 
-                        <div className="mb-8">
-                            <p className="text-[10px] font-black text-[#2e7d32] uppercase tracking-[0.2em] mb-1.5">{service.category}</p>
-                            <h3 className="font-black text-xl text-gray-900 tracking-tight leading-tight">{service.name}</h3>
+                        <div className="mb-4">
+                            <div className="flex items-center gap-1.5 mb-1">
+                                <p className="text-[9px] font-black text-[#2e7d32] uppercase tracking-[0.2em]">{service.category}</p>
+                                {service.promo_id && service.promo_active !== false && (
+                                    <span className="bg-orange-500 text-white text-[7px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                                        Promosi
+                                    </span>
+                                )}
+                            </div>
+                            <h3 className="font-black text-base text-gray-900 tracking-tight leading-tight truncate">{service.name}</h3>
                         </div>
 
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between bg-gray-50/50 p-4 rounded-2xl border border-gray-100/50">
+                        <div className="space-y-2.5">
+                            <div className="flex items-center justify-between bg-gray-50/50 p-3 rounded-xl border border-gray-100/50">
                                 <div>
-                                    <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Harga Biasa</p>
-                                    <p className="text-xl font-black text-gray-900 tabular-nums tracking-tighter">{formatCurrency(service.price)}</p>
+                                    <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Harga Biasa</p>
+                                    <p className="text-base font-black text-gray-900 tabular-nums tracking-tighter">{formatCurrency(service.price)}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[8px] font-black text-[#2e7d32] uppercase tracking-widest mb-0.5">Ahli (VIP)</p>
-                                    <p className="text-xl font-black text-[#2e7d32] tabular-nums tracking-tighter">{formatCurrency(service.memberPrice)}</p>
+                                    <p className="text-[7px] font-black text-[#2e7d32] uppercase tracking-widest mb-0.5">Ahli (VIP)</p>
+                                    <p className="text-base font-black text-[#2e7d32] tabular-nums tracking-tighter">{formatCurrency(service.memberPrice)}</p>
                                 </div>
                             </div>
 
-                            <div className="flex items-center justify-between px-2">
-                                <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                    <Clock className="h-3.5 w-3.5" />
-                                    {service.duration} Minit
+                            {service.promo_id && service.promo_active !== false && service.promo_price != null && (
+                                <div className="flex items-center justify-between bg-orange-50 p-3 rounded-xl border border-orange-200/50">
+                                    <div>
+                                        <p className="text-[7px] font-black text-orange-500 uppercase tracking-widest mb-0.5">Harga Promosi</p>
+                                        <p className="text-base font-black text-orange-600 tabular-nums tracking-tighter">{formatCurrency(service.promo_price)}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Jimat</p>
+                                        <p className="text-sm font-black text-red-500 tabular-nums tracking-tighter">
+                                            -{Math.round(((service.price - service.promo_price) / service.price) * 100)}%
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                    <Percent className="h-3.5 w-3.5" />
-                                    {service.commissionRate}% Komisen
+                            )}
+
+                            <div className="flex items-center justify-between px-1">
+                                <div className="flex items-center gap-1.5 text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                                    <Clock className="h-3 w-3" />
+                                    {service.duration} Min
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                                    <Percent className="h-3 w-3" />
+                                    {service.commissionRate}%
                                 </div>
                             </div>
                         </div>
 
                         {isAdmin && (
-                            <div className="flex gap-3 mt-8">
+                            <div className="flex gap-2 mt-4">
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="flex-1 h-11 rounded-xl border-gray-100 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-50"
+                                    className="flex-1 h-9 rounded-lg border-gray-100 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-50"
                                     onClick={() => openEditModal(service)}
                                 >
                                     Kemaskini
@@ -133,7 +155,7 @@ export function ServiceGrid({
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    className={`flex-1 h-11 rounded-xl text-[10px] font-black uppercase tracking-widest ${service.isActive ? "text-red-400 hover:text-red-500 hover:bg-red-50" : "text-green-500 hover:text-green-600 hover:bg-green-50"}`}
+                                    className={`flex-1 h-9 rounded-lg text-[9px] font-black uppercase tracking-widest ${service.isActive ? "text-red-400 hover:text-red-500 hover:bg-red-50" : "text-green-500 hover:text-green-600 hover:bg-green-50"}`}
                                     onClick={() => handleToggleActive(service)}
                                 >
                                     {service.isActive ? "Arkibkan" : "Aktifkan"}

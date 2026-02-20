@@ -38,6 +38,7 @@ export default function POSPage() {
     services,
     products,
     staff,
+    activePromotions,
     activeTab,
     setActiveTab,
     selectedCategory,
@@ -225,6 +226,7 @@ export default function POSPage() {
             addToCart={addToCart}
             addProductToCart={addProductToCart}
             isMember={selectedCustomer?.is_member || false}
+            activePromotions={activePromotions}
           />
 
           {/* RIGHT: Cart Panel */}

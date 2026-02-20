@@ -53,10 +53,10 @@ export function CustomerDetailView({
     return (
         <div className="flex-1 flex flex-col gap-6 lg:h-full lg:overflow-y-auto pr-2 custom-scrollbar pb-6">
             {/* Summary Card */}
-            <Card className="border-none shadow-xl bg-white rounded-[2rem] overflow-hidden">
-                <div className="bg-gradient-to-r from-[#2e7d32] to-[#4caf50] h-24 relative">
-                    <div className="absolute -bottom-10 left-8">
-                        <Avatar name={customer.name} className="h-20 w-20 border-4 border-white shadow-xl text-2xl font-black" />
+            <Card className="border-none shadow-xl bg-white rounded-2xl overflow-hidden">
+                <div className="bg-gradient-to-r from-[#2e7d32] to-[#4caf50] h-16 relative">
+                    <div className="absolute -bottom-8 left-6">
+                        <Avatar name={customer.name} className="h-16 w-16 border-4 border-white shadow-xl text-xl font-black" />
                     </div>
                     <div className="absolute top-6 right-8 flex gap-2">
                         <Button
@@ -69,11 +69,11 @@ export function CustomerDetailView({
                         </Button>
                     </div>
                 </div>
-                <CardContent className="pt-14 pb-8 px-8">
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <CardContent className="pt-10 pb-5 px-6">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                         <div>
-                            <div className="flex items-center gap-4 mb-2">
-                                <h2 className="text-3xl font-black text-gray-900 tracking-tighter">{customer.name}</h2>
+                            <div className="flex items-center gap-3 mb-1.5">
+                                <h2 className="text-2xl font-black text-gray-900 tracking-tighter">{customer.name}</h2>
                                 <Badge
                                     variant={tierColors[customer.tier] || "default"}
                                     className="uppercase font-black tracking-[0.15em] text-[9px] px-2.5 py-1 rounded-lg border-none"
@@ -90,20 +90,20 @@ export function CustomerDetailView({
                             </p>
                         </div>
 
-                        <div className="flex gap-4">
-                            <div className="bg-gray-50/80 px-5 py-4 rounded-[24px] border border-gray-100 text-center min-w-[120px]">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Point Terkumpul</p>
-                                <p className="text-2xl font-black text-[#2e7d32] tabular-nums tracking-tighter">{customer.points_balance.toLocaleString()}</p>
+                        <div className="flex gap-3">
+                            <div className="bg-gray-50/80 px-4 py-3 rounded-xl border border-gray-100 text-center min-w-[100px]">
+                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Point Terkumpul</p>
+                                <p className="text-xl font-black text-[#2e7d32] tabular-nums tracking-tighter">{customer.points_balance.toLocaleString()}</p>
                             </div>
-                            <div className="bg-gray-50/80 px-5 py-4 rounded-[24px] border border-gray-100 text-center min-w-[120px]">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Jumlah Jualan</p>
-                                <p className="text-2xl font-black text-gray-900 tabular-nums tracking-tighter">RM {customer.total_spent?.toLocaleString()}</p>
+                            <div className="bg-gray-50/80 px-4 py-3 rounded-xl border border-gray-100 text-center min-w-[100px]">
+                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Jumlah Jualan</p>
+                                <p className="text-xl font-black text-gray-900 tabular-nums tracking-tighter">RM {customer.total_spent?.toLocaleString()}</p>
                             </div>
                         </div>
                     </div>
 
                     {(customer as any).notes && (
-                        <div className="mt-8 p-6 bg-orange-50/50 border border-orange-100/50 rounded-[28px] relative overflow-hidden group">
+                        <div className="mt-5 p-4 bg-orange-50/50 border border-orange-100/50 rounded-xl relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform">
                                 <MessageSquare className="h-10 w-10 text-orange-400" />
                             </div>
@@ -147,19 +147,19 @@ export function CustomerDetailView({
                             </Card>
                         ) : (
                             (showAllLogs ? activityLog : activityLog.slice(0, 8)).map((item) => (
-                                <Card key={item.id} className="border-none shadow-lg shadow-gray-200/50 bg-white rounded-[1.5rem] overflow-hidden group transition-all duration-300 hover:shadow-xl hover:shadow-gray-200">
-                                    <div className="p-5 flex items-start gap-5">
-                                        <div className={`h-12 w-12 rounded-[18px] flex items-center justify-center shrink-0 border-2 transition-all duration-500 group-hover:rotate-12 ${item.type === "earned" ? "bg-green-50 border-green-100/50 text-green-600 shadow-sm" :
-                                            item.type === "redeemed" ? "bg-red-50 border-red-100/50 text-red-600 shadow-sm" :
-                                                "bg-blue-50 border-blue-100/50 text-blue-600 shadow-sm"
+                                <Card key={item.id} className="border-none shadow-md shadow-gray-200/50 bg-white rounded-xl overflow-hidden group transition-all duration-300 hover:shadow-lg hover:shadow-gray-200">
+                                    <div className="p-3.5 flex items-start gap-3">
+                                        <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 border transition-all duration-500 group-hover:rotate-12 ${item.type === "earned" ? "bg-green-50 border-green-100/50 text-green-600" :
+                                            item.type === "redeemed" ? "bg-red-50 border-red-100/50 text-red-600" :
+                                                "bg-blue-50 border-blue-100/50 text-blue-600"
                                             }`}>
-                                            {item.type === "earned" ? <Plus className="h-5 w-5" /> :
-                                                item.type === "redeemed" ? <Minus className="h-5 w-5" /> :
-                                                    <Edit3 className="h-5 w-5" />}
+                                            {item.type === "earned" ? <Plus className="h-4 w-4" /> :
+                                                item.type === "redeemed" ? <Minus className="h-4 w-4" /> :
+                                                    <Edit3 className="h-4 w-4" />}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-start mb-1.5 pt-0.5">
-                                                <p className={`text-lg font-black tracking-tighter ${item.points > 0 ? "text-green-600" :
+                                            <div className="flex justify-between items-start mb-1">
+                                                <p className={`text-base font-black tracking-tighter ${item.points > 0 ? "text-green-600" :
                                                     item.points < 0 ? "text-red-600" : "text-blue-600"
                                                     }`}>
                                                     {item.points > 0 ? "+" : ""}{item.points.toLocaleString()} Points
@@ -199,40 +199,40 @@ export function CustomerDetailView({
 
                 {/* Admin Control Panel */}
                 {isAdmin && (
-                    <Card className="w-full xl:w-80 shrink-0 border-none shadow-xl bg-white rounded-[2rem] self-start sticky top-6">
-                        <CardContent className="p-8">
-                            <div className="flex items-center gap-3 mb-8">
-                                <div className="h-10 w-10 rounded-[14px] bg-[#2e7d3210] flex items-center justify-center shadow-inner">
-                                    <Scissors className="h-5 w-5 text-[#2e7d32]" />
+                    <Card className="w-full xl:w-72 shrink-0 border-none shadow-xl bg-white rounded-2xl self-start sticky top-6">
+                        <CardContent className="p-5">
+                            <div className="flex items-center gap-2.5 mb-5">
+                                <div className="h-8 w-8 rounded-lg bg-[#2e7d3210] flex items-center justify-center shadow-inner">
+                                    <Scissors className="h-4 w-4 text-[#2e7d32]" />
                                 </div>
                                 <h3 className="font-black uppercase tracking-tight text-[#2e7d32] text-sm">
                                     Pelarasan Point
                                 </h3>
                             </div>
 
-                            <div className="space-y-8">
+                            <div className="space-y-5">
                                 <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">
+                                    <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2.5">
                                         Jumlah Pelarasan
                                     </label>
-                                    <div className="flex items-center gap-4 bg-gray-50/50 p-2.5 rounded-[24px] border border-gray-100">
+                                    <div className="flex items-center gap-3 bg-gray-50/50 p-2 rounded-xl border border-gray-100">
                                         <button
                                             onClick={() => setAdjustmentAmount(adjustmentAmount - 10)}
-                                            className="h-11 w-11 rounded-2xl bg-white shadow-sm flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all active:scale-95"
+                                            className="h-9 w-9 rounded-lg bg-white shadow-sm flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all active:scale-95"
                                         >
-                                            <Minus className="h-5 w-5" />
+                                            <Minus className="h-4 w-4" />
                                         </button>
                                         <input
                                             type="number"
                                             value={adjustmentAmount}
                                             onChange={(e) => setAdjustmentAmount(Number(e.target.value))}
-                                            className="flex-1 w-full text-center text-3xl font-black bg-transparent outline-none tabular-nums tracking-tighter"
+                                            className="flex-1 w-full text-center text-2xl font-black bg-transparent outline-none tabular-nums tracking-tighter"
                                         />
                                         <button
                                             onClick={() => setAdjustmentAmount(adjustmentAmount + 10)}
-                                            className="h-11 w-11 rounded-2xl bg-white shadow-sm flex items-center justify-center hover:bg-green-50 hover:text-green-500 transition-all active:scale-95"
+                                            className="h-9 w-9 rounded-lg bg-white shadow-sm flex items-center justify-center hover:bg-green-50 hover:text-green-500 transition-all active:scale-95"
                                         >
-                                            <Plus className="h-5 w-5" />
+                                            <Plus className="h-4 w-4" />
                                         </button>
                                     </div>
                                     <p className="text-[9px] text-gray-400 text-center mt-3 font-black uppercase tracking-[0.1em]">
@@ -241,13 +241,13 @@ export function CustomerDetailView({
                                 </div>
 
                                 <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+                                    <label className="block text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">
                                         Sebab Pelarasan
                                     </label>
                                     <select
                                         value={adjustmentReason}
                                         onChange={(e) => setAdjustmentReason(e.target.value)}
-                                        className="w-full h-12 px-5 bg-gray-50/50 border border-gray-100 rounded-[20px] focus:outline-none focus:ring-2 focus:ring-[#2e7d32]/10 font-bold text-xs transition-all appearance-none"
+                                        className="w-full h-10 px-4 bg-gray-50/50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2e7d32]/10 font-bold text-xs transition-all appearance-none"
                                     >
                                         <option>Referral Bonus</option>
                                         <option>Birthday Bonus</option>
@@ -259,7 +259,7 @@ export function CustomerDetailView({
 
                                 <div className="pt-2 space-y-3">
                                     <Button
-                                        className="w-full h-14 rounded-[20px] font-black uppercase tracking-[0.15em] text-[11px] shadow-xl shadow-green-100 bg-[#2e7d32] hover:bg-[#1b5e20] transition-all active:scale-95"
+                                        className="w-full h-11 rounded-xl font-black uppercase tracking-[0.15em] text-[10px] shadow-lg shadow-green-100 bg-[#2e7d32] hover:bg-[#1b5e20] transition-all active:scale-95"
                                         onClick={handleUpdateBalance}
                                     >
                                         Sahkan Pelarasan
@@ -276,7 +276,7 @@ export function CustomerDetailView({
                                 </div>
                             </div>
 
-                            <div className="mt-10 p-5 bg-blue-50/30 rounded-[24px] border border-blue-100/50">
+                            <div className="mt-6 p-3.5 bg-blue-50/30 rounded-xl border border-blue-100/50">
                                 <p className="text-[9px] text-blue-600 font-black leading-relaxed tracking-wide">
                                     ⓘ Perhatian: Setiap pelarasan akan direkodkan bersama ID admin dan boleh disemak dalam laporan audit.
                                 </p>

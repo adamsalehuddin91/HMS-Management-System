@@ -174,9 +174,9 @@ export const posService = {
             const pointsEarned = sale.points_earned || 0;
             const pointsRedeemed = sale.points_redeemed || 0;
 
-            // Reversal: deduct earned, add back redeemed
+            // Reversal: deduct earned, add back redeemed (never go below 0)
             const currentBalance = sale.customer.points_balance || 0;
-            const newBalance = currentBalance - pointsEarned + pointsRedeemed;
+            const newBalance = Math.max(0, currentBalance - pointsEarned + pointsRedeemed);
 
             await supabase.from('customers')
                 .update({

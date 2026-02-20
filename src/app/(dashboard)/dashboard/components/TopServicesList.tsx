@@ -20,21 +20,21 @@ export function TopServicesList({
     const totalCount = topServices.reduce((sum, s) => sum + s.count, 0);
 
     return (
-        <Card className="border-none shadow-xl bg-white/50 backdrop-blur-md rounded-[2rem] overflow-hidden">
-            <CardHeader className="p-8 pb-0">
+        <Card className="border-none shadow-xl bg-white/50 backdrop-blur-md rounded-2xl overflow-hidden">
+            <CardHeader className="p-5 pb-0">
                 <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Perkhidmatan Teratas</p>
-                        <div className="flex items-baseline gap-2 mt-1">
-                            <span className="text-3xl font-black text-gray-900 tracking-tighter">
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Perkhidmatan Teratas</p>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-2xl font-black text-gray-900 tracking-tighter">
                                 {loading ? "..." : `Total ${totalCount}`}
                             </span>
-                            <span className="text-xs font-bold text-gray-400">Bulan Ini</span>
+                            <span className="text-[10px] font-bold text-gray-400">Bulan Ini</span>
                         </div>
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="p-8">
+            <CardContent className="p-5">
                 {loading ? (
                     <div className="h-44 flex items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-[#2e7d32]" />
@@ -44,10 +44,10 @@ export function TopServicesList({
                         Tiada data perkhidmatan
                     </div>
                 ) : (
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                         {topServices.map((service, index) => (
-                            <div key={service.name} className="flex items-center gap-4 group">
-                                <div className="h-10 w-10 rounded-2xl bg-gray-50 flex items-center justify-center text-xs font-black text-gray-400 group-hover:bg-[#2e7d32]/5 group-hover:text-[#2e7d32] transition-colors">
+                            <div key={service.name} className="flex items-center gap-3 group">
+                                <div className="h-8 w-8 rounded-xl bg-gray-50 flex items-center justify-center text-[10px] font-black text-gray-400 group-hover:bg-[#2e7d32]/5 group-hover:text-[#2e7d32] transition-colors">
                                     0{index + 1}
                                 </div>
                                 <div className="flex-1">

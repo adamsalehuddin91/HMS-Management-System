@@ -21,12 +21,12 @@ export function FinancialOverview({
     totalTransactions
 }: FinancialOverviewProps) {
     return (
-        <Card className="border-none shadow-xl bg-white rounded-[2.5rem] overflow-hidden group">
-            <CardContent className="p-10">
-                <div className="flex items-center justify-between mb-8">
+        <Card className="border-none shadow-xl bg-white rounded-2xl overflow-hidden group">
+            <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-5">
                     <div>
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2e7d32]">Ringkasan Jualan</h3>
-                        <p className="text-2xl font-black text-gray-900 tracking-tight mt-1">Prestasi Kewangan</p>
+                        <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-[#2e7d32]">Ringkasan Jualan</h3>
+                        <p className="text-xl font-black text-gray-900 tracking-tight mt-0.5">Prestasi Kewangan</p>
                     </div>
                 </div>
 
@@ -35,33 +35,33 @@ export function FinancialOverview({
                         <Loader2 className="h-8 w-8 animate-spin text-[#2e7d32]/20" />
                     </div>
                 ) : (
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                         {isCurrentMonth && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="flex items-center justify-between p-7 bg-gray-50/80 rounded-[2rem] border border-gray-100 hover:bg-white hover:shadow-xl hover:shadow-green-900/5 transition-all group/stat">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="flex items-center justify-between p-4 bg-gray-50/80 rounded-xl border border-gray-100 hover:bg-white hover:shadow-lg hover:shadow-green-900/5 transition-all group/stat">
                                     <div>
-                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Hari Ini</p>
-                                        <p className="text-2xl font-black text-gray-900 tabular-nums tracking-tighter group-hover/stat:scale-110 transition-transform origin-left">{formatCurrency(salesData.daily)}</p>
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Hari Ini</p>
+                                        <p className="text-xl font-black text-gray-900 tabular-nums tracking-tighter group-hover/stat:scale-110 transition-transform origin-left">{formatCurrency(salesData.daily)}</p>
                                     </div>
-                                    <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#2e7d32]/30 group-hover/stat:text-[#2e7d32] transition-colors">
-                                        <TrendingUp className="h-5 w-5" />
+                                    <div className="h-9 w-9 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#2e7d32]/30 group-hover/stat:text-[#2e7d32] transition-colors">
+                                        <TrendingUp className="h-4 w-4" />
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between p-7 bg-gray-50/80 rounded-[2rem] border border-gray-100 hover:bg-white hover:shadow-xl hover:shadow-green-900/5 transition-all group/stat">
+                                <div className="flex items-center justify-between p-4 bg-gray-50/80 rounded-xl border border-gray-100 hover:bg-white hover:shadow-lg hover:shadow-green-900/5 transition-all group/stat">
                                     <div>
-                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Minggu Ini</p>
-                                        <p className="text-2xl font-black text-gray-900 tabular-nums tracking-tighter group-hover/stat:scale-110 transition-transform origin-left">{formatCurrency(salesData.weekly)}</p>
+                                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Minggu Ini</p>
+                                        <p className="text-xl font-black text-gray-900 tabular-nums tracking-tighter group-hover/stat:scale-110 transition-transform origin-left">{formatCurrency(salesData.weekly)}</p>
                                     </div>
-                                    <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-[#2e7d32]/30 group-hover/stat:text-[#2e7d32] transition-colors">
-                                        <TrendingUp className="h-5 w-5" />
+                                    <div className="h-9 w-9 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#2e7d32]/30 group-hover/stat:text-[#2e7d32] transition-colors">
+                                        <TrendingUp className="h-4 w-4" />
                                     </div>
                                 </div>
                             </div>
                         )}
-                        <div className="flex items-center justify-between p-8 bg-[#2e7d32]/5 rounded-[2.5rem] border border-[#2e7d32]/10 relative overflow-hidden group/primary">
+                        <div className="flex items-center justify-between p-5 bg-[#2e7d32]/5 rounded-2xl border border-[#2e7d32]/10 relative overflow-hidden group/primary">
                             <div className="relative z-10">
-                                <p className="text-[10px] font-black text-[#2e7d32] uppercase tracking-[0.2em] mb-2">{format(selectedMonth, 'MMMM yyyy')}</p>
-                                <p className="text-4xl font-black text-[#2e7d32] tabular-nums tracking-tighter group-hover/primary:scale-110 transition-transform origin-left">{formatCurrency(salesData.monthly)}</p>
+                                <p className="text-[9px] font-black text-[#2e7d32] uppercase tracking-[0.2em] mb-1">{format(selectedMonth, 'MMMM yyyy')}</p>
+                                <p className="text-3xl font-black text-[#2e7d32] tabular-nums tracking-tighter group-hover/primary:scale-110 transition-transform origin-left">{formatCurrency(salesData.monthly)}</p>
                             </div>
                             <div className="text-right relative z-10">
                                 <div className="flex items-center justify-end gap-2 text-[#2e7d32]/50 font-black text-[10px] uppercase tracking-widest mb-2">
@@ -76,15 +76,15 @@ export function FinancialOverview({
                                 <TrendingUp className="h-40 w-40" />
                             </div>
                         </div>
-                        <div className="flex items-center justify-between p-7 bg-gray-50/80 rounded-[2rem] border border-gray-100 hover:bg-white hover:shadow-xl hover:shadow-green-900/5 transition-all group/stat">
+                        <div className="flex items-center justify-between p-4 bg-gray-50/80 rounded-xl border border-gray-100 hover:bg-white hover:shadow-lg hover:shadow-green-900/5 transition-all group/stat">
                             <div>
-                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Purata per Transaksi</p>
-                                <p className="text-2xl font-black text-gray-900 tabular-nums tracking-tighter group-hover/stat:scale-110 transition-transform origin-left">
+                                <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Purata per Transaksi</p>
+                                <p className="text-xl font-black text-gray-900 tabular-nums tracking-tighter group-hover/stat:scale-110 transition-transform origin-left">
                                     {totalTransactions > 0 ? formatCurrency(salesData.monthly / totalTransactions) : 'RM 0'}
                                 </p>
                             </div>
-                            <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-gray-200 group-hover/stat:text-orange-400 transition-colors">
-                                <DollarSign className="h-5 w-5" />
+                            <div className="h-9 w-9 rounded-xl bg-white shadow-sm flex items-center justify-center text-gray-200 group-hover/stat:text-orange-400 transition-colors">
+                                <DollarSign className="h-4 w-4" />
                             </div>
                         </div>
                     </div>

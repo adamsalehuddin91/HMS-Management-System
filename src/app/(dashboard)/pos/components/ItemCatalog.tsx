@@ -5,7 +5,7 @@ import { Search, Scissors, Package, Loader2 } from "lucide-react";
 import { Button, Card, CardContent, Input } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 
-import type { Service, Product } from "@/types";
+import type { Service, Product, Promotion } from "@/types";
 
 interface ItemCatalogProps {
     activeTab: 'services' | 'products';
@@ -21,6 +21,7 @@ interface ItemCatalogProps {
     addToCart: (service: Service) => void;
     addProductToCart: (product: Product) => void;
     isMember: boolean;
+    activePromotions?: Promotion[];
 }
 
 const CATEGORY_IMAGES: Record<string, string> = {
@@ -51,8 +52,12 @@ export function ItemCatalog({
     products,
     addToCart,
     addProductToCart,
-    isMember
+    isMember,
+    activePromotions = []
 }: ItemCatalogProps) {
+    // Build a map of service_id -> promo for quick lookup
+    const promoMap = new Map(activePromotions.map(p => [p.service_id, p]));
+
     return (
         <div className="flex-1 min-w-0">
             {/* Services/Products Toggle */}
@@ -138,7 +143,14 @@ export function ItemCatalog({
                                 No services match your search
                             </motion.div>
                         ) : (
-                            filteredServices.map((service, index) => (
+                            filteredServices.map((service, index) => {
+                                const promo = promoMap.get(service.id);
+                                const normalPrice = isMember && service.member_price ? service.member_price : service.price;
+                                const hasPromo = !!promo;
+                                const displayPrice = hasPromo ? promo.promo_price : normalPrice;
+                                const discount = hasPromo ? Math.round(((normalPrice - promo.promo_price) / normalPrice) * 100) : 0;
+
+                                return (
                                 <motion.div
                                     layout
                                     key={service.id}
@@ -149,33 +161,50 @@ export function ItemCatalog({
                                     whileTap={{ scale: 0.98 }}
                                 >
                                     <Card
-                                        className="cursor-pointer border-none shadow-sm bg-white hover:shadow-xl hover:shadow-[#2e7d32]/5 transition-all group overflow-hidden"
+                                        className={`cursor-pointer border-none shadow-sm bg-white hover:shadow-xl hover:shadow-[#2e7d32]/5 transition-all group overflow-hidden ${hasPromo ? 'ring-2 ring-orange-400/60' : ''}`}
                                         onClick={() => addToCart(service)}
                                     >
                                         <CardContent className="p-0">
-                                            <div className="relative h-32 overflow-hidden">
+                                            <div className="relative h-24 overflow-hidden">
                                                 <img
                                                     src={service.image_url || CATEGORY_IMAGES[service.category] || DEFAULT_IMAGE}
                                                     alt={service.name}
                                                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                                                 />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                                <div className="absolute top-2 right-2 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
-                                                    <Button size="icon" className="h-8 w-8 rounded-full bg-white/90 backdrop-blur text-[#2e7d32] hover:bg-white shadow-lg">
-                                                        <Scissors className="h-4 w-4" />
+                                                {hasPromo && (
+                                                    <div className="absolute top-1.5 left-1.5 flex items-center gap-1">
+                                                        <span className="bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-lg animate-pulse">
+                                                            Promosi
+                                                        </span>
+                                                        {discount > 0 && (
+                                                            <span className="bg-red-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full shadow-lg">
+                                                                -{discount}%
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                <div className="absolute top-1.5 right-1.5 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
+                                                    <Button size="icon" className="h-7 w-7 rounded-full bg-white/90 backdrop-blur text-[#2e7d32] hover:bg-white shadow-lg">
+                                                        <Scissors className="h-3.5 w-3.5" />
                                                     </Button>
                                                 </div>
                                             </div>
-                                            <div className="p-4">
-                                                <h3 className="font-bold text-gray-700 truncate">{service.name}</h3>
-                                                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-2">{service.category}</p>
-                                                <div className="flex items-center justify-between mt-auto">
+                                            <div className="p-3">
+                                                <h3 className="font-bold text-sm text-gray-700 truncate">{service.name}</h3>
+                                                <p className="text-[9px] text-gray-400 uppercase font-bold tracking-widest mb-1">{service.category}</p>
+                                                <div className="flex items-center justify-between">
                                                     <div>
-                                                        <p className="text-lg font-black text-[#2e7d32]">
-                                                            {formatCurrency(isMember && service.member_price ? service.member_price : service.price)}
+                                                        <p className={`text-base font-black ${hasPromo ? 'text-orange-500' : 'text-[#2e7d32]'}`}>
+                                                            {formatCurrency(displayPrice)}
                                                         </p>
-                                                        {isMember && service.member_price && service.member_price < service.price && (
-                                                            <p className="text-[10px] text-gray-400 line-through font-bold">
+                                                        {hasPromo && (
+                                                            <p className="text-[9px] text-gray-400 line-through font-bold">
+                                                                {formatCurrency(normalPrice)}
+                                                            </p>
+                                                        )}
+                                                        {!hasPromo && isMember && service.member_price && service.member_price < service.price && (
+                                                            <p className="text-[9px] text-gray-400 line-through font-bold">
                                                                 {formatCurrency(service.price)}
                                                             </p>
                                                         )}
@@ -185,7 +214,8 @@ export function ItemCatalog({
                                         </CardContent>
                                     </Card>
                                 </motion.div>
-                            ))
+                                );
+                            })
                         )}
                     </AnimatePresence>
                 ) : (
@@ -221,14 +251,14 @@ export function ItemCatalog({
                                         onClick={() => addProductToCart(product)}
                                     >
                                         <CardContent className="p-0">
-                                            <div className="relative h-32 overflow-hidden">
+                                            <div className="relative h-24 overflow-hidden">
                                                 <img
                                                     src={product.image_url || "https://images.unsplash.com/photo-1535585209827-a15fcdbc4c2d?q=80&w=200&auto=format&fit=crop"}
                                                     alt={product.name}
                                                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                                                 />
-                                                <div className="absolute top-2 right-2">
-                                                    <span className={`text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-widest ${product.stock_quantity <= 5
+                                                <div className="absolute top-1.5 right-1.5">
+                                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-widest ${product.stock_quantity <= 5
                                                         ? 'bg-orange-500 text-white'
                                                         : 'bg-white/90 backdrop-blur text-[#2e7d32] border border-[#2e7d32]/10'
                                                         }`}>
@@ -236,10 +266,10 @@ export function ItemCatalog({
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="p-4">
-                                                <h3 className="font-bold text-gray-700 truncate">{product.name}</h3>
-                                                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-2">{product.brand || product.category}</p>
-                                                <p className="text-lg font-black text-[#2e7d32]">
+                                            <div className="p-3">
+                                                <h3 className="font-bold text-sm text-gray-700 truncate">{product.name}</h3>
+                                                <p className="text-[9px] text-gray-400 uppercase font-bold tracking-widest mb-1">{product.brand || product.category}</p>
+                                                <p className="text-base font-black text-[#2e7d32]">
                                                     {formatCurrency(product.sell_price)}
                                                 </p>
                                             </div>

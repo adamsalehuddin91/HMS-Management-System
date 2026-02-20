@@ -58,22 +58,22 @@ export function UpcomingAppointmentsList({
     };
 
     return (
-        <Card className="border-none shadow-xl bg-white/50 backdrop-blur-md rounded-[2rem] overflow-visible">
-            <CardHeader className="p-8 pb-4">
+        <Card className="border-none shadow-xl bg-white/50 backdrop-blur-md rounded-2xl overflow-visible">
+            <CardHeader className="p-5 pb-3">
                 <div className="flex items-center justify-between">
                     <div>
-                        <CardTitle className="text-xl font-black text-gray-900 tracking-tight">Tempahan Akan Datang</CardTitle>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Jadual Semasa</p>
+                        <CardTitle className="text-base font-black text-gray-900 tracking-tight">Tempahan Akan Datang</CardTitle>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Jadual Semasa</p>
                     </div>
                     <Link href="/appointments">
-                        <Button variant="ghost" className="h-10 px-4 rounded-xl text-[#2e7d32] font-black text-xs uppercase tracking-widest hover:bg-[#2e7d32]/5">
-                            <Calendar className="h-4 w-4 mr-2" />
+                        <Button variant="ghost" className="h-8 px-3 rounded-lg text-[#2e7d32] font-black text-[10px] uppercase tracking-widest hover:bg-[#2e7d32]/5">
+                            <Calendar className="h-3.5 w-3.5 mr-1.5" />
                             Lihat Jadual
                         </Button>
                     </Link>
                 </div>
             </CardHeader>
-            <CardContent className="p-8 pt-0">
+            <CardContent className="p-5 pt-0">
                 {loading ? (
                     <div className="py-12 flex items-center justify-center">
                         <Loader2 className="h-6 w-6 animate-spin text-[#2e7d32]" />
@@ -83,14 +83,14 @@ export function UpcomingAppointmentsList({
                         <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Tiada tempahan akan datang</p>
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-2.5">
                         {upcomingAppointments.map((apt) => (
                             <div
                                 key={apt.id}
-                                className="group flex items-center justify-between p-5 bg-white border border-gray-50 rounded-[24px] hover:border-[#2e7d32]/10 hover:shadow-lg hover:shadow-[#2e7d32]/5 transition-all duration-300"
+                                className="group flex items-center justify-between p-3.5 bg-white border border-gray-50 rounded-2xl hover:border-[#2e7d32]/10 hover:shadow-md hover:shadow-[#2e7d32]/5 transition-all duration-300"
                             >
-                                <div className="flex items-center gap-5">
-                                    <Avatar name={apt.customer} className="h-12 w-12 border-2 border-white shadow-sm group-hover:scale-105 transition-transform" />
+                                <div className="flex items-center gap-3">
+                                    <Avatar name={apt.customer} className="h-9 w-9 border-2 border-white shadow-sm group-hover:scale-105 transition-transform" />
                                     <div>
                                         <p className="text-sm font-black text-gray-800 tracking-tight">{apt.customer}</p>
                                         <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">{apt.service}</p>

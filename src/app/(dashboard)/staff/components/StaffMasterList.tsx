@@ -63,27 +63,27 @@ export function StaffMasterList({
         );
 
     return (
-        <Card className="flex-1 border-none shadow-xl bg-white rounded-[2.5rem] overflow-hidden">
-            <CardContent className="p-8">
+        <Card className="flex-1 border-none shadow-xl bg-white rounded-2xl overflow-hidden">
+            <CardContent className="p-5">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-4">
                     <div>
                         <h2 className="text-sm font-black uppercase tracking-tight text-[#2e7d32]">Kakitangan</h2>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Urus pasukan anda</p>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Urus pasukan anda</p>
                     </div>
                     {isAdmin && (
                         <Button
                             onClick={() => setShowAddModal(true)}
-                            className="h-10 px-5 rounded-2xl bg-[#2e7d32] hover:bg-[#1b5e20] shadow-lg shadow-[#2e7d32]/10 font-black text-[10px] uppercase tracking-widest"
+                            className="h-9 px-4 rounded-xl bg-[#2e7d32] hover:bg-[#1b5e20] shadow-lg shadow-[#2e7d32]/10 font-black text-[9px] uppercase tracking-widest"
                         >
-                            <Plus className="h-4 w-4 mr-2" />
+                            <Plus className="h-3.5 w-3.5 mr-1.5" />
                             Tambah Staff
                         </Button>
                     )}
                 </div>
 
                 {/* Filter tabs */}
-                <div className="flex items-center gap-2 bg-gray-100/70 p-1 rounded-2xl w-fit mb-6">
+                <div className="flex items-center gap-1.5 bg-gray-100/70 p-1 rounded-xl w-fit mb-4">
                     {FILTER_TABS.map(({ id, label }) => (
                         <button
                             key={id}
@@ -99,18 +99,18 @@ export function StaffMasterList({
                 </div>
 
                 {/* Search */}
-                <div className="mb-6">
+                <div className="mb-4">
                     <Input
                         placeholder="Cari mengikut nama atau jawatan..."
                         icon={<Search className="h-4 w-4 text-gray-300" />}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-12 bg-gray-50 border-none rounded-2xl focus-visible:ring-1 focus-visible:ring-[#2e7d32]/20 text-sm"
+                        className="h-10 bg-gray-50 border-none rounded-xl focus-visible:ring-1 focus-visible:ring-[#2e7d32]/20 text-sm"
                     />
                 </div>
 
                 {/* Staff list */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                     {loading ? (
                         <div className="py-20 text-center text-gray-400">
                             <Loader2 className="h-6 w-6 animate-spin mx-auto mb-3 text-[#2e7d32]/20" />
@@ -125,7 +125,7 @@ export function StaffMasterList({
                             <div
                                 key={staff.id}
                                 onClick={() => setSelectedStaff(staff)}
-                                className={`flex items-center gap-5 p-5 rounded-[2rem] cursor-pointer transition-all duration-300 group relative border-2 ${selectedStaffId === staff.id
+                                className={`flex items-center gap-3.5 p-3.5 rounded-xl cursor-pointer transition-all duration-300 group relative border-2 ${selectedStaffId === staff.id
                                         ? "bg-[#2e7d32]/5 border-[#2e7d32]/10 shadow-sm"
                                         : "hover:bg-gray-50/80 border-transparent hover:scale-[1.01]"
                                     }`}
@@ -134,7 +134,7 @@ export function StaffMasterList({
                                     <Avatar
                                         name={staff.name}
                                         src={staff.avatar_url || undefined}
-                                        className="h-14 w-14 ring-4 ring-white shadow-md group-hover:scale-110 transition-transform"
+                                        className="h-10 w-10 ring-2 ring-white shadow-md group-hover:scale-110 transition-transform"
                                     />
                                     <div className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white shadow-sm ${staff.is_active ? "bg-green-500" : "bg-gray-300"}`} />
                                 </div>

@@ -55,19 +55,19 @@ export function StaffDetailView({
         : 0;
 
     return (
-        <Card className="w-full lg:w-[420px] shrink-0 border-none shadow-2xl bg-white rounded-[3rem] overflow-hidden self-start sticky top-8">
-            <CardContent className="p-10">
+        <Card className="w-full lg:w-[360px] shrink-0 border-none shadow-2xl bg-white rounded-2xl overflow-hidden self-start sticky top-8">
+            <CardContent className="p-6">
                 {/* Avatar + name */}
-                <div className="text-center mb-10">
-                    <div className="relative inline-block mb-6">
+                <div className="text-center mb-6">
+                    <div className="relative inline-block mb-4">
                         <Avatar
                             name={staff.name}
                             src={staff.avatar_url || undefined}
-                            className="h-28 w-28 ring-8 ring-gray-50 shadow-xl mx-auto text-3xl font-black"
+                            className="h-20 w-20 ring-4 ring-gray-50 shadow-xl mx-auto text-2xl font-black"
                         />
-                        <div className={`absolute bottom-1 right-1 h-6 w-6 rounded-full border-4 border-white shadow-md ${staff.is_active ? "bg-green-500" : "bg-gray-300"}`} />
+                        <div className={`absolute bottom-0.5 right-0.5 h-5 w-5 rounded-full border-3 border-white shadow-md ${staff.is_active ? "bg-green-500" : "bg-gray-300"}`} />
                     </div>
-                    <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-2">{staff.name}</h3>
+                    <h3 className="text-xl font-black text-gray-900 tracking-tight mb-1.5">{staff.name}</h3>
                     <div className="flex items-center justify-center gap-2">
                         <Badge className="bg-[#2e7d32] text-white font-black text-[9px] uppercase tracking-widest px-3 py-1 rounded-lg border-none">
                             {staff.role}
@@ -82,40 +82,40 @@ export function StaffDetailView({
                 </div>
 
                 {/* Contact info */}
-                <div className="space-y-0 mb-10">
-                    <div className="flex items-center justify-between py-4 border-b border-gray-50">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">No. Telefon</span>
-                        <span className="font-bold text-gray-700 tabular-nums">{staff.phone}</span>
+                <div className="space-y-0 mb-6">
+                    <div className="flex items-center justify-between py-2.5 border-b border-gray-50">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">No. Telefon</span>
+                        <span className="font-bold text-sm text-gray-700 tabular-nums">{staff.phone}</span>
                     </div>
-                    <div className="flex items-center justify-between py-4 border-b border-gray-50">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Email</span>
-                        <span className="font-bold text-gray-700 truncate max-w-[200px]">{staff.email || "—"}</span>
+                    <div className="flex items-center justify-between py-2.5 border-b border-gray-50">
+                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Email</span>
+                        <span className="font-bold text-sm text-gray-700 truncate max-w-[180px]">{staff.email || "—"}</span>
                     </div>
                 </div>
 
                 {/* Metrics */}
-                <div className="mb-8">
-                    <h4 className="text-[10px] font-black text-[#2e7d32] uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+                <div className="mb-5">
+                    <h4 className="text-[9px] font-black text-[#2e7d32] uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                         <div className="h-1.5 w-1.5 bg-[#2e7d32] rounded-full" />
                         Prestasi Bulan Ini
                     </h4>
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div className="p-5 bg-gray-50/80 rounded-[2rem] border border-gray-100 text-center transition-all hover:bg-white hover:shadow-xl hover:shadow-green-900/5 group">
-                            <p className="text-2xl font-black text-[#2e7d32] tracking-tighter mb-1 group-hover:scale-110 transition-transform">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div className="p-3.5 bg-gray-50/80 rounded-xl border border-gray-100 text-center transition-all hover:bg-white hover:shadow-lg hover:shadow-green-900/5 group">
+                            <p className="text-xl font-black text-[#2e7d32] tracking-tighter mb-0.5 group-hover:scale-110 transition-transform">
                                 {staff.servicesCount}
                             </p>
-                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Servis</p>
+                            <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest">Servis</p>
                         </div>
-                        <div className="p-5 bg-gray-50/80 rounded-[2rem] border border-gray-100 text-center transition-all hover:bg-white hover:shadow-xl hover:shadow-green-900/5 group">
-                            <p className="text-xl font-black text-gray-900 tracking-tighter mb-1 group-hover:scale-110 transition-transform tabular-nums">
+                        <div className="p-3.5 bg-gray-50/80 rounded-xl border border-gray-100 text-center transition-all hover:bg-white hover:shadow-lg hover:shadow-green-900/5 group">
+                            <p className="text-base font-black text-gray-900 tracking-tighter mb-0.5 group-hover:scale-110 transition-transform tabular-nums">
                                 {formatCurrency(staff.totalSales)}
                             </p>
-                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Jualan</p>
+                            <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest">Jualan</p>
                         </div>
                     </div>
 
                     {/* Commission progress */}
-                    <div className="bg-gray-50/80 rounded-[2rem] border border-gray-100 p-5">
+                    <div className="bg-gray-50/80 rounded-xl border border-gray-100 p-3.5">
                         <div className="flex items-center justify-between mb-3">
                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Komisen</p>
                             <p className="font-black text-base text-[#2e7d32] tabular-nums tracking-tighter">
@@ -137,18 +137,18 @@ export function StaffDetailView({
 
                 {/* Admin actions */}
                 {isAdmin && (
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                         <Button
-                            className="w-full h-14 rounded-[1.5rem] bg-[#2e7d32] hover:bg-[#1b5e20] shadow-xl shadow-green-900/10 font-black uppercase tracking-[0.1em] text-[11px]"
+                            className="w-full h-11 rounded-xl bg-[#2e7d32] hover:bg-[#1b5e20] shadow-lg shadow-green-900/10 font-black uppercase tracking-[0.1em] text-[10px]"
                             onClick={openCommissionModal}
                         >
-                            <DollarSign className="h-4 w-4 mr-2" />
+                            <DollarSign className="h-3.5 w-3.5 mr-2" />
                             Pelarasan Komisen
                         </Button>
-                        <div className="flex gap-3">
+                        <div className="flex gap-2">
                             <Button
                                 variant="outline"
-                                className="flex-1 h-12 rounded-[1.25rem] border-gray-100 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-50"
+                                className="flex-1 h-9 rounded-lg border-gray-100 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-50"
                                 onClick={openEditModal}
                             >
                                 Edit Profil
@@ -156,9 +156,9 @@ export function StaffDetailView({
                             <Link href="/appointments" className="flex-1">
                                 <Button
                                     variant="outline"
-                                    className="w-full h-12 rounded-[1.25rem] border-gray-100 text-[10px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-50"
+                                    className="w-full h-9 rounded-lg border-gray-100 text-[9px] font-black uppercase tracking-widest text-gray-500 hover:bg-gray-50"
                                 >
-                                    <Calendar className="h-4 w-4 mr-2" />
+                                    <Calendar className="h-3.5 w-3.5 mr-1.5" />
                                     Jadual
                                 </Button>
                             </Link>
@@ -166,7 +166,7 @@ export function StaffDetailView({
                         {/* Toggle aktif/arkib */}
                         <Button
                             variant="outline"
-                            className={`w-full h-12 rounded-[1.25rem] text-[10px] font-black uppercase tracking-widest transition-all ${staff.is_active
+                            className={`w-full h-9 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${staff.is_active
                                     ? "border-red-100 text-red-400 hover:bg-red-50 hover:border-red-200"
                                     : "border-green-100 text-[#2e7d32] hover:bg-green-50 hover:border-green-200"
                                 }`}
