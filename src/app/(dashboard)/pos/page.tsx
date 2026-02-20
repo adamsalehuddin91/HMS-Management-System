@@ -62,6 +62,8 @@ export default function POSPage() {
     pointsDiscount,
     actualDepositDeduction,
     maxRedeemable,
+    canRedeem,
+    isCartPromotional,
     completeSale,
     currentBookingId,
     depositPaid,
@@ -245,6 +247,8 @@ export default function POSPage() {
             pointsToRedeem={pointsToRedeem}
             setPointsToRedeem={setPointsToRedeem}
             maxRedeemable={maxRedeemable}
+            canRedeem={canRedeem}
+            isCartPromotional={isCartPromotional}
             actualPointsToRedeem={actualPointsToRedeem}
             pointsDiscount={pointsDiscount}
             currentBookingId={currentBookingId}

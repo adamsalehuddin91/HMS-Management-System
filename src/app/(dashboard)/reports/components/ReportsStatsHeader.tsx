@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, ChevronLeft, ChevronRight, Download, BarChart3, DollarSign, ShoppingCart, Users, Gift } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Download, BarChart3, DollarSign, ShoppingCart, Users, Gift, TrendingDown } from "lucide-react";
 import { Button, StatCard } from "@/components/ui";
 import { format, subMonths, addMonths } from "date-fns";
 import { formatCurrency } from "@/lib/utils";
@@ -14,6 +14,7 @@ interface ReportsStatsHeaderProps {
     totalTransactions: number;
     activeCustomers: number;
     pointsIssued: number;
+    totalPointsRedeemed: number;
     loading: boolean;
 }
 
@@ -26,6 +27,7 @@ export function ReportsStatsHeader({
     totalTransactions,
     activeCustomers,
     pointsIssued,
+    totalPointsRedeemed,
     loading
 }: ReportsStatsHeaderProps) {
     return (
@@ -75,7 +77,7 @@ export function ReportsStatsHeader({
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-6">
                 <StatCard
                     title="Jumlah Jualan Keseluruhan"
                     value={loading ? "..." : formatCurrency(salesData.overall)}
@@ -100,6 +102,11 @@ export function ReportsStatsHeader({
                     title="Mata Ganjaran Dikeluarkan"
                     value={loading ? "..." : `${pointsIssued.toLocaleString()} pts`}
                     icon={Gift}
+                />
+                <StatCard
+                    title="Mata Ditebus"
+                    value={loading ? "..." : `${totalPointsRedeemed.toLocaleString()} pts`}
+                    icon={TrendingDown}
                 />
             </div>
         </div>

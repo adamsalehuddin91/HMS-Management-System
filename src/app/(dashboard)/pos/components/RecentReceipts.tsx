@@ -31,7 +31,7 @@ async function fetchReceiptData(saleId: string): Promise<ReceiptData | null> {
             .single(),
         supabase
             .from("sale_items")
-            .select("item_name, quantity, price, total, item_type, stylist_id")
+            .select("item_name, quantity, price, total, item_type, stylist_id, promo_description")
             .eq("sale_id", saleId),
         supabase
             .from("business_settings")
@@ -66,11 +66,13 @@ async function fetchReceiptData(saleId: string): Promise<ReceiptData | null> {
         total: item.total,
         itemType: item.item_type === "product" ? "product" : "service",
         staffName: item.stylist_id ? staffMap[item.stylist_id] : undefined,
+        promoDescription: item.promo_description,
+        originalPrice: item.unit_price && item.unit_price > item.price ? item.unit_price : undefined,
     }));
 
     const subtotal = receiptItems.reduce((sum, i) => sum + i.total, 0);
     const pointsRedeemed = sale.points_redeemed || 0;
-    const pointsDiscount = pointsRedeemed * 0.03;
+    const pointsDiscount = pointsRedeemed * 0.05;
     const depositDeducted = sale.deposit_deducted || 0;
 
     return {

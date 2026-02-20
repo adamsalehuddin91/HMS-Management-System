@@ -57,6 +57,7 @@ export interface Service {
   duration: number;
   commission_rate: number;
   is_active: boolean;
+  is_point_eligible: boolean;   // false = excluded from earning (e.g. Hair Cut)
   image_url?: string;
   created_at: string;
   updated_at: string;
@@ -132,6 +133,8 @@ export interface Sale {
   total: number;
   payment_method: PaymentMethod;
   status: SaleStatus;
+  is_promotional: boolean;      // true = promo txn (redeem blocked)
+  promotion_id?: string;
   notes?: string;
   created_by: string;
   created_at: string;
@@ -152,6 +155,8 @@ export interface SaleItem {
   total: number;
   commission_rate: number;
   commission_amount: number;
+  promo_id?: string;
+  promo_description?: string;
 }
 
 // Points Types
@@ -165,7 +170,24 @@ export interface PointsTransaction {
   balance_after: number;
   reference_id?: string;
   reason?: string;
+  expires_at?: string;          // set for 'earn' type — 6 months
+  is_expired: boolean;
   performed_by: string;
+  created_at: string;
+}
+
+// Promotion Types
+export interface Promotion {
+  id: string;
+  name: string;
+  description?: string;
+  promo_price: number;
+  service_id?: string;          // null = cart-wide
+  service?: Service;
+  start_date: string;           // YYYY-MM-DD
+  end_date: string;             // YYYY-MM-DD
+  is_active: boolean;
+  created_by: string;
   created_at: string;
 }
 

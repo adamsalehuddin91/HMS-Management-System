@@ -17,10 +17,17 @@ interface ServiceWithUI {
     commissionRate: number;
     is_active: boolean;
     isActive: boolean;
+    is_point_eligible: boolean;
     image_url?: string;
     image: string;
     created_at: string;
     updated_at: string;
+    promo_id?: string;
+    promo_price?: number;
+    promo_description?: string;
+    promo_start_date?: string;
+    promo_end_date?: string;
+    promo_active?: boolean;
 }
 
 interface CommissionTableProps {

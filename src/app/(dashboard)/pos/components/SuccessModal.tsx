@@ -67,7 +67,9 @@ export function SuccessModal({
                 price: item.price,
                 total: item.price * item.quantity,
                 itemType: item.itemType,
-                staffName: primaryStaff?.name
+                staffName: primaryStaff?.name,
+                promoDescription: item.promoDescription,
+                originalPrice: item.originalPrice,
             };
         });
 

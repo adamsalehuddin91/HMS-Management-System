@@ -20,6 +20,7 @@ import {
   ShoppingCart,
   Plus,
   Leaf,
+  Tag,
 } from "lucide-react";
 
 const adminNavItems = [
@@ -31,6 +32,7 @@ const adminNavItems = [
   { href: "/inventory", label: "Inventory", icon: Package },
   { href: "/pos", label: "POS", icon: Receipt },
   { href: "/reports", label: "Reports", icon: BarChart3 },
+  { href: "/promotions", label: "Promotions", icon: Tag },
 ];
 
 const staffNavItems = [

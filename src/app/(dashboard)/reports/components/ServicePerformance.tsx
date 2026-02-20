@@ -105,15 +105,17 @@ export function ServicePerformance({
                                     <tr className="border-b border-gray-50">
                                         <th className="text-left py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Pasukan</th>
                                         <th className="text-left py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Servis</th>
+                                        <th className="text-right py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Jualan (RM)</th>
                                         <th className="text-right py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Komisen</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
                                     {staffPerformance.slice(0, 5).map((staff) => (
                                         <tr key={staff.id} className="group hover:bg-gray-50/50 transition-all">
-                                            <td className="py-5 font-black text-sm text-gray-900 tracking-tight italic">{staff.name}</td>
+                                            <td className="py-5 font-black text-sm text-gray-900 tracking-tight not-italic">{staff.name}</td>
                                             <td className="py-5 font-bold text-xs text-gray-500 tabular-nums uppercase">{staff.services} Kali</td>
-                                            <td className="py-5 text-right font-black text-sm text-[#2e7d32] tabular-nums tracking-tighter italic">{formatCurrency(staff.commission)}</td>
+                                            <td className="py-5 text-right font-black text-sm text-gray-700 tabular-nums tracking-tighter">{formatCurrency(staff.revenue)}</td>
+                                            <td className="py-5 text-right font-black text-sm text-[#2e7d32] tabular-nums tracking-tighter not-italic">{formatCurrency(staff.commission)}</td>
                                         </tr>
                                     ))}
                                 </tbody>

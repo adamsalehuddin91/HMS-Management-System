@@ -1,10 +1,21 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { CartItem, StaffMember } from "@/lib/utils/pos-calculations";
+import {
+    CartItem,
+    StaffMember,
+    cartIsPromotional,
+    computeMaxRedeemable,
+    pointsToRm,
+    POINTS_EARN_RATE,
+    MIN_REDEEM_PTS,
+    POINTS_REDEEM_UNIT,
+} from "@/lib/utils/pos-calculations";
 import { posService } from "@/lib/services/pos-service";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import type { Service, Product, Customer, PaymentMethod, User } from "@/types";
+import type { Service, Product, Customer, PaymentMethod, User, Promotion } from "@/types";
 import { logError } from "@/lib/utils/error-logger";
 
 export function usePOS(bookingId: string | null, user: User | null) {
@@ -16,6 +27,7 @@ export function usePOS(bookingId: string | null, user: User | null) {
     const [products, setProducts] = useState<Product[]>([]);
     const [staff, setStaff] = useState<StaffMember[]>([]);
     const [customers, setCustomers] = useState<Customer[]>([]);
+    const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
 
     // UI states
     const [activeTab, setActiveTab] = useState<'services' | 'products'>('services');
@@ -41,25 +53,39 @@ export function usePOS(bookingId: string | null, user: User | null) {
 
     const supabase = createClient();
 
-    // Initial data fetch
+    // ── Helper: resolve promo for a service ──────────────────────────────────
+    const resolvePromo = (serviceId: string): Promotion | null => {
+        return activePromotions.find(p => p.service_id === serviceId) || null;
+    };
+
+    // ── Initial data fetch ────────────────────────────────────────────────────
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
             try {
+                const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
                 const [
                     { data: servicesData },
                     { data: productsData },
                     { data: staffData },
-                    { data: settingsData }
+                    { data: settingsData },
+                    { data: promosData },
                 ] = await Promise.all([
                     supabase.from('services').select('*').eq('is_active', true).order('category'),
                     supabase.from('products').select('*').eq('is_active', true).gt('stock_quantity', 0).order('name'),
                     supabase.from('staff').select('*').eq('is_active', true).order('name'),
-                    supabase.from('business_settings').select('setting_value').eq('setting_key', 'business_info').single()
+                    supabase.from('business_settings').select('setting_value').eq('setting_key', 'business_info').single(),
+                    supabase.from('promotions')
+                        .select('*')
+                        .eq('is_active', true)
+                        .lte('start_date', today)
+                        .gte('end_date', today),
                 ]);
 
                 if (servicesData) setServices(servicesData);
                 if (productsData) setProducts(productsData);
+                if (promosData) setActivePromotions(promosData);
                 if (staffData) {
                     setStaff(staffData.map((s: { id: string; name: string; role: string }) => ({
                         id: s.id,
@@ -86,7 +112,7 @@ export function usePOS(bookingId: string | null, user: User | null) {
                         .select(`
               *,
               customer:customers(id, name, phone, points_balance, is_member),
-              service:services(id, name, price, member_price, category, image_url),
+              service:services(id, name, price, member_price, category, image_url, is_point_eligible),
               staff:staff(id, name, role)
             `)
                         .eq('id', bookingId)
@@ -109,20 +135,29 @@ export function usePOS(bookingId: string | null, user: User | null) {
 
                         if (bookingData.service && bookingData.staff) {
                             const isMember = bookingData.customer?.is_member;
-                            const price = isMember && bookingData.service.member_price
+                            const normalPrice = isMember && bookingData.service.member_price
                                 ? bookingData.service.member_price
                                 : bookingData.service.price;
+
+                            // Check if service has an active promo
+                            const promo = promosData?.find((p: Promotion) => p.service_id === bookingData.service.id);
+                            const effectivePrice = promo ? promo.promo_price : normalPrice;
 
                             const assignedStaff = staffData.find((s: { id: string }) => s.id === bookingData.staff.id);
 
                             setCart([{
                                 id: bookingData.service.id,
                                 name: bookingData.service.name,
-                                price: price,
+                                price: effectivePrice,
+                                originalPrice: normalPrice,
                                 quantity: 1,
                                 primaryStaffId: assignedStaff?.id || staffData[0]?.id || '',
                                 secondaryStaffId: null,
-                                itemType: 'service'
+                                itemType: 'service',
+                                isPromo: !!promo,
+                                promoId: promo?.id,
+                                promoDescription: promo?.description || promo?.name,
+                                isPointEligible: bookingData.service.is_point_eligible ?? true,
                             }]);
                         }
                     }
@@ -136,9 +171,10 @@ export function usePOS(bookingId: string | null, user: User | null) {
         };
 
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [bookingId]);
 
-    // Cart operations
+    // ── Cart operations ───────────────────────────────────────────────────────
     const addToCart = (service: Service) => {
         if (staff.length === 0) {
             toast.error("Kakitangan tidak dijumpai. Sila tambah kakitangan terlebih dahulu.");
@@ -149,19 +185,31 @@ export function usePOS(bookingId: string | null, user: User | null) {
         if (existing) {
             updateQuantity(service.id, 1, 'service');
         } else {
-            const price = selectedCustomer?.is_member && service.member_price
+            const normalPrice = selectedCustomer?.is_member && service.member_price
                 ? service.member_price
                 : service.price;
+
+            const promo = resolvePromo(service.id);
+            const effectivePrice = promo ? promo.promo_price : normalPrice;
 
             setCart([...cart, {
                 id: service.id,
                 name: service.name,
-                price: price,
+                price: effectivePrice,
+                originalPrice: normalPrice,
                 quantity: 1,
                 primaryStaffId: staff[0].id,
                 secondaryStaffId: null,
                 itemType: 'service',
+                isPromo: !!promo,
+                promoId: promo?.id,
+                promoDescription: promo?.description || promo?.name,
+                isPointEligible: service.is_point_eligible ?? true,
             }]);
+
+            if (promo) {
+                toast.info(`Harga promosi digunakan: ${service.name} → RM${promo.promo_price.toFixed(2)}`);
+            }
         }
     };
 
@@ -190,6 +238,7 @@ export function usePOS(bookingId: string | null, user: User | null) {
                 primaryStaffId: staff[0].id,
                 secondaryStaffId: null,
                 itemType: 'product',
+                isPointEligible: false, // products never earn
             }]);
         }
     };
@@ -239,15 +288,30 @@ export function usePOS(bookingId: string | null, user: User | null) {
         if (bookingId) router.replace('/pos');
     };
 
-    // Totals calculations
+    // ── Derived totals ────────────────────────────────────────────────────────
     const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const maxRedeemable = Math.floor(subtotal * 0.2 / 0.03);
-    const actualPointsToRedeem = Math.min(pointsToRedeem, selectedCustomer?.points_balance || 0, maxRedeemable);
-    const pointsDiscount = actualPointsToRedeem * 0.03;
+    const isCartPromotional = cartIsPromotional(cart);
+
+    // Redemption: blocked on promo transactions
+    const customerBalance = selectedCustomer?.points_balance || 0;
+    const maxRedeemable = isCartPromotional ? 0 : computeMaxRedeemable(customerBalance);
+    const canRedeem = !isCartPromotional && customerBalance >= MIN_REDEEM_PTS;
+
+    // Clamp user input: must be multiple of 100, within cap
+    const actualPointsToRedeem = isCartPromotional
+        ? 0
+        : Math.min(
+            Math.floor(pointsToRedeem / POINTS_REDEEM_UNIT) * POINTS_REDEEM_UNIT,
+            maxRedeemable
+        );
+    const pointsDiscount = pointsToRm(actualPointsToRedeem);
     const actualDepositDeduction = depositPaid ? depositAmount : 0;
     const total = Math.max(0, subtotal - pointsDiscount - actualDepositDeduction);
-    const pointsEarned = Math.floor(total > 0 ? total : 0);
 
+    // Points earned on this transaction (1 pt per RM1 of net total paid)
+    const pointsEarned = Math.floor(total * POINTS_EARN_RATE);
+
+    // ── Checkout ──────────────────────────────────────────────────────────────
     const completeSale = async () => {
         try {
             const { saleId } = await posService.completeSale({
@@ -263,7 +327,8 @@ export function usePOS(bookingId: string | null, user: User | null) {
                 paymentMethod,
                 cart,
                 staff,
-                products
+                products,
+                isPromotional: isCartPromotional,
             });
             return saleId;
         } catch (error) {
@@ -277,6 +342,7 @@ export function usePOS(bookingId: string | null, user: User | null) {
         services,
         products,
         staff,
+        activePromotions,
         activeTab,
         setActiveTab,
         selectedCategory,
@@ -301,6 +367,8 @@ export function usePOS(bookingId: string | null, user: User | null) {
         pointsDiscount,
         actualDepositDeduction,
         maxRedeemable,
+        canRedeem,
+        isCartPromotional,
         completeSale,
         currentBookingId,
         depositPaid,

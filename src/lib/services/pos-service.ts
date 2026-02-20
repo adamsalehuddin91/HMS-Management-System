@@ -24,7 +24,8 @@ export const posService = {
         paymentMethod,
         cart,
         staff,
-        products // Needed to update stock levels
+        products,
+        isPromotional = false,
     }: {
         user: { id: string } | null;
         selectedCustomer: { id: string; points_balance?: number; visit_count?: number } | null;
@@ -39,6 +40,7 @@ export const posService = {
         cart: CartItem[];
         staff: StaffMember[];
         products: { id: string; stock_quantity: number }[];
+        isPromotional?: boolean;
     }) {
         const supabase = createClient();
 
@@ -47,8 +49,10 @@ export const posService = {
             const primaryStaff = staff.find(s => s.id === item.primaryStaffId);
             const secondaryStaff = item.secondaryStaffId ? staff.find(s => s.id === item.secondaryStaffId) : null;
 
+            // Commission always based on original price, not promo price
+            const commissionPrice = item.originalPrice || item.price;
             const commission = primaryStaff
-                ? calculateItemCommission(item.price, item.quantity, primaryStaff, secondaryStaff || null, item.itemType)
+                ? calculateItemCommission(commissionPrice, item.quantity, primaryStaff, secondaryStaff || null, item.itemType)
                 : null;
 
             return {
@@ -59,17 +63,20 @@ export const posService = {
                 secondaryStaffId: item.secondaryStaffId || null,
                 quantity: item.quantity,
                 price: item.price,
+                originalPrice: item.originalPrice || item.price,
                 commission: commission ? {
                     primary: commission.primary,
                     primaryRate: commission.primaryRate,
                     secondary: commission.secondary || 0,
                     secondaryRate: commission.secondaryRate || 0
-                } : null
+                } : null,
+                promoId: item.promoId || null,
+                promoDescription: item.promoDescription || null
             };
         });
 
-        // Call the atomic RPC function
-        const { data, error } = await supabase.rpc('complete_sale', {
+        // Build RPC params — base params that exist in current DB
+        const rpcParams: Record<string, unknown> = {
             p_customer_id: selectedCustomer?.id || null,
             p_booking_id: currentBookingId || null,
             p_subtotal: subtotal,
@@ -81,15 +88,34 @@ export const posService = {
             p_payment_method: paymentMethod,
             p_created_by: user?.id || null,
             p_cart_items: cartItemsWithCommissions,
-            p_products: products
-        });
+            p_products: products,
+        };
+
+        // Try with new params first, fallback without if RPC doesn't support them yet
+        let data, error;
+        ({ data, error } = await supabase.rpc('complete_sale', {
+            ...rpcParams,
+            p_is_promotional: isPromotional,
+            p_points_earned: pointsEarned,
+        }));
+
+        // If error is about unknown params, retry without the new ones
+        if (error && (error.message?.includes('p_is_promotional') || error.message?.includes('p_points_earned') || error.code === '42883')) {
+            console.log('RPC fallback: complete_sale without promo params');
+            ({ data, error } = await supabase.rpc('complete_sale', rpcParams));
+        }
 
         if (error) {
             // Check for specific error types
             if (error.message?.includes('Insufficient stock')) {
                 throw new Error('One or more products have insufficient stock. Please refresh and try again.');
             }
-            throw error;
+            console.error('complete_sale RPC error:', JSON.stringify(error, null, 2));
+            throw new Error(error.message || `RPC failed (${error.code}): ${JSON.stringify(error)}`);
+        }
+
+        if (!data?.saleId) {
+            throw new Error('Sale completed but no sale ID returned. Please check recent transactions.');
         }
 
         return { saleId: data.saleId };
@@ -145,14 +171,12 @@ export const posService = {
 
         // 3. Reverse customer points
         if (sale.customer_id && sale.customer) {
-            const pointsEarned = Math.floor(sale.total);
+            const pointsEarned = sale.points_earned || 0;
             const pointsRedeemed = sale.points_redeemed || 0;
 
-            // Reversal logic:
-            // Earned points -> Deduct
-            // Redeemed points -> Add back
-            const netPointsReversal = pointsRedeemed - pointsEarned;
-            const newBalance = (sale.customer.points_balance || 0) + netPointsReversal;
+            // Reversal: deduct earned, add back redeemed
+            const currentBalance = sale.customer.points_balance || 0;
+            const newBalance = currentBalance - pointsEarned + pointsRedeemed;
 
             await supabase.from('customers')
                 .update({
@@ -161,25 +185,29 @@ export const posService = {
                 })
                 .eq('id', sale.customer_id);
 
-            // Record points transactions
+            // Record points transactions with correct running balance
             const reversalTransactions = [];
+            let runningBalance = currentBalance;
+
             if (pointsEarned > 0) {
+                runningBalance -= pointsEarned;
                 reversalTransactions.push({
                     customer_id: sale.customer_id,
-                    type: 'adjusted',
+                    type: 'adjust',
                     points: -pointsEarned,
-                    balance_after: (sale.customer.points_balance || 0) - pointsEarned,
+                    balance_after: runningBalance,
                     reference_id: saleId,
                     reason: 'POS Void (Earned Reversal)',
                     performed_by: voidedBy
                 });
             }
             if (pointsRedeemed > 0) {
+                runningBalance += pointsRedeemed;
                 reversalTransactions.push({
                     customer_id: sale.customer_id,
-                    type: 'earned', // Add back as earned or adjusted
+                    type: 'adjust',
                     points: pointsRedeemed,
-                    balance_after: newBalance,
+                    balance_after: runningBalance,
                     reference_id: saleId,
                     reason: 'POS Void (Redemption Reversal)',
                     performed_by: voidedBy

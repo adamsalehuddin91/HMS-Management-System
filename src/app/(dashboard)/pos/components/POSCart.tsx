@@ -34,6 +34,8 @@ interface POSCartProps {
     pointsToRedeem: number;
     setPointsToRedeem: (pts: number) => void;
     maxRedeemable: number;
+    canRedeem: boolean;
+    isCartPromotional: boolean;
     actualPointsToRedeem: number;
     pointsDiscount: number;
     currentBookingId: string | null;
@@ -65,6 +67,8 @@ export function POSCart({
     pointsToRedeem,
     setPointsToRedeem,
     maxRedeemable,
+    canRedeem,
+    isCartPromotional,
     actualPointsToRedeem,
     pointsDiscount,
     currentBookingId,
@@ -220,7 +224,7 @@ export function POSCart({
                 {/* Cart Footer / Summary */}
                 <div className="p-4 bg-gray-50/50 space-y-3">
                     {/* Points Redemption */}
-                    {selectedCustomer && selectedCustomer.points_balance > 0 && cart.length > 0 && (
+                    {selectedCustomer && cart.length > 0 && (
                         <div className="p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
                             <div className="flex items-center justify-between mb-3">
                                 <span className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
@@ -231,22 +235,53 @@ export function POSCart({
                                     {selectedCustomer.points_balance} pts
                                 </span>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <Input
-                                    type="number"
-                                    value={pointsToRedeem}
-                                    onChange={(e) => setPointsToRedeem(Math.max(0, parseInt(e.target.value) || 0))}
-                                    className="h-10 text-center font-bold bg-gray-50 border-none rounded-xl"
-                                />
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-10 rounded-xl px-4 border-gray-100 font-bold hover:bg-[#2e7d32] hover:text-white transition-all"
-                                    onClick={() => setPointsToRedeem(Math.min(selectedCustomer.points_balance, maxRedeemable))}
-                                >
-                                    Max
-                                </Button>
-                            </div>
+
+                            {isCartPromotional ? (
+                                /* Promo transaction — redemption blocked */
+                                <div className="flex items-center gap-2 bg-amber-50 rounded-xl p-3">
+                                    <Tag className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                                        Promosi aktif — mata tidak boleh ditebus
+                                    </p>
+                                </div>
+                            ) : !canRedeem ? (
+                                /* Insufficient balance */
+                                <p className="text-[10px] text-gray-300 font-black uppercase tracking-widest">
+                                    Minimum 100 mata diperlukan untuk menebus
+                                </p>
+                            ) : (
+                                /* Normal redemption UI */
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setPointsToRedeem(Math.max(0, pointsToRedeem - 100))}
+                                            disabled={pointsToRedeem <= 0}
+                                            className="h-9 w-9 rounded-xl bg-gray-100 text-gray-500 font-black hover:bg-gray-200 transition-all disabled:opacity-30"
+                                        >−</button>
+                                        <div className="flex-1 text-center">
+                                            <p className="font-black text-lg text-gray-800 tabular-nums">{pointsToRedeem} pts</p>
+                                            {pointsToRedeem > 0 && (
+                                                <p className="text-[10px] text-[#2e7d32] font-black">= RM{((pointsToRedeem / 100) * 5).toFixed(2)} diskaun</p>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => setPointsToRedeem(Math.min(maxRedeemable, pointsToRedeem + 100))}
+                                            disabled={pointsToRedeem >= maxRedeemable}
+                                            className="h-9 w-9 rounded-xl bg-gray-100 text-gray-500 font-black hover:bg-gray-200 transition-all disabled:opacity-30"
+                                        >+</button>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setPointsToRedeem(0)}
+                                            className="flex-1 h-8 rounded-xl text-[10px] font-black text-gray-400 bg-gray-100 hover:bg-gray-200 uppercase tracking-widest transition-all"
+                                        >Reset</button>
+                                        <button
+                                            onClick={() => setPointsToRedeem(maxRedeemable)}
+                                            className="flex-1 h-8 rounded-xl text-[10px] font-black text-[#2e7d32] bg-[#2e7d32]/10 hover:bg-[#2e7d32]/20 uppercase tracking-widest transition-all"
+                                        >Max ({maxRedeemable} pts)</button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -330,8 +365,9 @@ function CartItem({
     const secondaryStaff = item.secondaryStaffId ? staff.find(s => s.id === item.secondaryStaffId) : null;
     const isProduct = item.itemType === 'product';
 
+    const commissionPrice = item.originalPrice || item.price;
     const commission = isAdmin && primaryStaff
-        ? calculateItemCommission(item.price, item.quantity, primaryStaff, secondaryStaff || null, item.itemType)
+        ? calculateItemCommission(commissionPrice, item.quantity, primaryStaff, secondaryStaff || null, item.itemType)
         : null;
 
     return (
@@ -347,10 +383,25 @@ function CartItem({
                     {isProduct ? <Package className="h-6 w-6 text-gray-300" /> : <Scissors className="h-6 w-6 text-gray-300" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-800 text-sm truncate">{item.name}</p>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                        {formatCurrency(item.price)} × {item.quantity}
-                    </p>
+                    <div className="flex items-center gap-2 mb-0.5">
+                        <p className="font-bold text-gray-800 text-sm truncate">{item.name}</p>
+                        {item.promoDescription && (
+                            <span className="shrink-0 max-w-[120px] truncate px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest bg-amber-100 text-amber-700 rounded-md border border-amber-200">
+                                {item.promoDescription}
+                            </span>
+                        )}
+                        {!item.promoDescription && item.isPromo && (
+                            <span className="shrink-0 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-widest bg-amber-100 text-amber-600 rounded-md">Promosi</span>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                            {formatCurrency(item.price)} × {item.quantity}
+                        </p>
+                        {item.isPromo && item.originalPrice && item.originalPrice !== item.price && (
+                            <p className="text-[9px] text-gray-300 font-bold line-through">{formatCurrency(item.originalPrice)}</p>
+                        )}
+                    </div>
                 </div>
                 <button
                     onClick={() => removeFromCart(item.id, item.itemType)}

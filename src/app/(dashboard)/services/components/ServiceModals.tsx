@@ -3,13 +3,21 @@
 import { X, Loader2 } from "lucide-react";
 import { Button, Card, CardContent, Input } from "@/components/ui";
 
-interface ServiceFormData {
+export interface ServiceFormData {
     name: string;
     category: string;
     price: number;
     member_price: number;
     duration: number;
     commission_rate: number;
+    // Promo fields
+    promo_id?: string;
+    promo_price?: number;
+    promo_description?: string;
+    promo_start_date?: string;
+    promo_end_date?: string;
+    promo_active?: boolean;
+    has_promo?: boolean; // UI toggle state
 }
 
 interface ServiceModalsProps {
@@ -135,6 +143,102 @@ export function ServiceModals({
                                 />
                             </div>
                         </div>
+
+                        {/* Promotion Section */}
+                        {isEdit && (
+                            <div className="pt-6 border-t border-gray-100">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <h4 className="text-sm font-black text-gray-900 uppercase tracking-tight">Tetapan Promosi</h4>
+                                        <p className="text-[10px] font-bold text-gray-400">Aktifkan harga istimewa untuk tempoh terhad</p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                            {currentService.has_promo ? "ON" : "OFF"}
+                                        </span>
+                                        <button
+                                            onClick={() => setCurrentService({ ...currentService, has_promo: !currentService.has_promo })}
+                                            className={`relative h-6 w-11 rounded-full transition-colors ${currentService.has_promo ? "bg-[#2e7d32]" : "bg-gray-200"}`}
+                                        >
+                                            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${currentService.has_promo ? "translate-x-5" : "translate-x-0.5"}`} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {currentService.has_promo && (
+                                    <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 text-amber-600">Harga Promosi (RM)</label>
+                                                <div className="relative">
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="0.00"
+                                                        value={currentService.promo_price || ""}
+                                                        onChange={(e) => setCurrentService({ ...currentService, promo_price: parseFloat(e.target.value) })}
+                                                        className="h-12 bg-amber-50/50 border-none rounded-2xl focus-visible:ring-1 focus-visible:ring-amber-500/20 font-bold tabular-nums text-amber-700 pr-16"
+                                                    />
+                                                    {currentService.price > 0 && (currentService.promo_price || 0) > 0 && (currentService.promo_price || 0) < currentService.price && (
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                            <span className="text-[9px] font-black text-amber-600 bg-amber-100 px-2 py-0.5 rounded-lg">
+                                                                -{Math.round(((currentService.price - (currentService.promo_price || 0)) / currentService.price) * 100)}%
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Status</label>
+                                                <select
+                                                    value={currentService.promo_active ? "active" : "inactive"}
+                                                    onChange={(e) => setCurrentService({ ...currentService, promo_active: e.target.value === "active" })}
+                                                    className="w-full h-12 px-5 bg-gray-50 border-none rounded-2xl focus:outline-none focus:ring-1 focus:ring-[#2e7d32]/20 font-bold text-xs transition-all appearance-none"
+                                                >
+                                                    <option value="active">Aktif</option>
+                                                    <option value="inactive">Tidak Aktif (Disimpan)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ayat Promosi (Pemasaran)</label>
+                                            <textarea
+                                                placeholder="cth: Istimewa Hari Raya! Potongan 20% untuk semua pelanggan."
+                                                value={currentService.promo_description || ""}
+                                                onChange={(e) => setCurrentService({ ...currentService, promo_description: e.target.value })}
+                                                className="w-full h-20 p-4 bg-gray-50 border-none rounded-2xl focus:outline-none focus:ring-1 focus:ring-[#2e7d32]/20 font-bold text-sm resize-none"
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tarikh Mula</label>
+                                                <Input
+                                                    type="date"
+                                                    value={currentService.promo_start_date || ""}
+                                                    onChange={(e) => setCurrentService({ ...currentService, promo_start_date: e.target.value })}
+                                                    className="h-12 bg-gray-50 border-none rounded-2xl focus-visible:ring-1 focus-visible:ring-[#2e7d32]/20 font-bold"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tarikh Tamat</label>
+                                                <Input
+                                                    type="date"
+                                                    value={currentService.promo_end_date || ""}
+                                                    min={currentService.promo_start_date || undefined}
+                                                    onChange={(e) => {
+                                                        const endDate = e.target.value;
+                                                        if (currentService.promo_start_date && endDate < currentService.promo_start_date) return;
+                                                        setCurrentService({ ...currentService, promo_end_date: endDate });
+                                                    }}
+                                                    className="h-12 bg-gray-50 border-none rounded-2xl focus-visible:ring-1 focus-visible:ring-[#2e7d32]/20 font-bold"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex gap-4 mt-10">
@@ -159,6 +263,6 @@ export function ServiceModals({
                     </div>
                 </CardContent>
             </Card>
-        </div>
+        </div >
     );
 }

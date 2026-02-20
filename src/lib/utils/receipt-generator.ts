@@ -16,6 +16,8 @@ export interface ReceiptItem {
   total: number;
   itemType: 'service' | 'product';
   staffName?: string;
+  promoDescription?: string;
+  originalPrice?: number;
 }
 
 export interface ReceiptData {
@@ -222,12 +224,40 @@ export async function generateReceipt(data: ReceiptData): Promise<jsPDF> {
     doc.setFontSize(6);
     doc.setTextColor(80); // Gray text
 
+    // Show original price crossed out if promo applied
+    if (item.originalPrice && item.originalPrice > item.price) {
+      const origText = `Harga Asal: ${formatCurrency(item.originalPrice)}`;
+      doc.setFont("helvetica", "normal");
+      doc.text(origText, margin + 1, y);
+      // Draw strikethrough line
+      const origWidth = doc.getTextWidth(origText);
+      const strikeY = y - 0.8;
+      doc.setLineWidth(0.15);
+      doc.line(margin + 1, strikeY, margin + 1 + origWidth, strikeY);
+      y += smallLineHeight;
+    }
+
     let detailText = `${item.quantity} x ${formatCurrency(item.price)}`;
     if (item.staffName) {
       detailText += ` (${item.staffName})`;
     }
+    // Add promo description if active (New line)
+    if (item.promoDescription) {
+      doc.text(detailText, margin + 1, y);
+      y += smallLineHeight;
 
-    doc.text(detailText, margin + 1, y);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(5);
+      const promoText = `(Promo: ${item.promoDescription})`;
+      const promoLines = doc.splitTextToSize(promoText, contentWidth - 2);
+      promoLines.forEach((line: string) => {
+        doc.text(line, margin + 1, y);
+        y += smallLineHeight;
+      });
+      doc.setFont("helvetica", "normal");
+    } else {
+      doc.text(detailText, margin + 1, y);
+    }
     doc.setTextColor(0); // Reset black
     y += smallLineHeight + 2; // Extra spacing between items
   });
@@ -377,7 +407,14 @@ export async function printReceipt(data: ReceiptData): Promise<void> {
  */
 export function generateWhatsAppReceipt(data: ReceiptData): string {
   const itemsList = data.items.map(item => {
-    return `• ${item.name} x${item.quantity} - RM${item.total.toFixed(2)}`;
+    let line = `• ${item.name} x${item.quantity} - RM${item.total.toFixed(2)}`;
+    if (item.originalPrice && item.originalPrice > item.price) {
+      line += `\n  ~Harga Asal: RM${(item.originalPrice * item.quantity).toFixed(2)}~ → RM${item.total.toFixed(2)}`;
+    }
+    if (item.promoDescription) {
+      line += `\n  (Promosi: ${item.promoDescription})`;
+    }
+    return line;
   }).join('\n');
 
   const totalSection = [

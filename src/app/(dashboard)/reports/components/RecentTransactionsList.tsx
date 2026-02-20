@@ -76,11 +76,12 @@ async function fetchReceiptData(saleId: string): Promise<ReceiptData | null> {
         total: item.total,
         itemType: item.item_type === "product" ? "product" : "service",
         staffName: item.stylist_id ? staffMap[item.stylist_id] : undefined,
+        originalPrice: item.unit_price && item.unit_price > item.price ? item.unit_price : undefined,
     }));
 
     const subtotal = receiptItems.reduce((sum, i) => sum + i.total, 0);
     const pointsRedeemed = sale.points_redeemed || 0;
-    const pointsDiscount = pointsRedeemed * 0.03; // 1 point = RM0.03
+    const pointsDiscount = pointsRedeemed * 0.05; // 100 pts = RM5
     const depositDeducted = sale.deposit_deducted || 0;
 
     return {
