@@ -83,7 +83,22 @@ export function usePOS(bookingId: string | null, user: User | null) {
                         .gte('end_date', today),
                 ]);
 
-                if (servicesData) setServices(servicesData);
+                if (servicesData) {
+                    // Build set of service IDs that have active promos
+                    const promoServiceIds = new Set(
+                        (promosData || []).map((p: Promotion) => p.service_id)
+                    );
+                    // Deduplicate by name+category — prefer the entry linked to a promo
+                    const seen = new Map<string, typeof servicesData[0]>();
+                    for (const s of servicesData) {
+                        const key = `${s.name.toLowerCase().trim()}|${(s.category || '').toLowerCase().trim()}`;
+                        const existing = seen.get(key);
+                        if (!existing || promoServiceIds.has(s.id)) {
+                            seen.set(key, s);
+                        }
+                    }
+                    setServices(Array.from(seen.values()));
+                }
                 if (productsData) setProducts(productsData);
                 if (promosData) setActivePromotions(promosData);
                 if (staffData) {

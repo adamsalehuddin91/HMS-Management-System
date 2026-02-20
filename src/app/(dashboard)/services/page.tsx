@@ -83,7 +83,19 @@ export default function ServicesPage() {
       if (error) {
         logError('Services Page', error);
       } else if (data) {
-        setServices(data.map((s: any) => {
+        // Deduplicate by name+category — prefer entry with active promo
+        const seen = new Map<string, any>();
+        for (const s of data) {
+          const key = `${s.name.toLowerCase().trim()}|${(s.category || '').toLowerCase().trim()}`;
+          const hasPromo = s.promotions?.some((p: any) => p.is_active);
+          const existing = seen.get(key);
+          if (!existing || hasPromo) {
+            seen.set(key, s);
+          }
+        }
+        const dedupedData = Array.from(seen.values());
+
+        setServices(dedupedData.map((s: any) => {
           // Find latest ACTIVE promo first, fallback to latest any promo
           const sortedPromos = s.promotions?.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) || [];
           const promo = sortedPromos.find((p: any) => p.is_active) || sortedPromos[0] || null;
