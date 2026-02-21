@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Scissors, Clock, Calendar, User, MapPin } from "lucide-react";
 import { Card, CardContent, Badge } from "@/components/ui";
 import { format } from "date-fns";
+import { ms } from "date-fns/locale/ms";
 import { formatCurrency } from "@/lib/utils";
 import { Service, Staff, BusinessInfo } from "@/lib/utils/booking-utils";
 
@@ -69,9 +70,16 @@ export function BookingConfirmation({
                             </div>
                         </div>
                         <div className="text-right">
-                            <p className="text-2xl font-black text-[#2e7d32]">
-                                {formatCurrency(selectedService?.price || 0)}
-                            </p>
+                            {selectedService?.promo_active && selectedService?.promo_price != null ? (
+                                <>
+                                    <p className="text-sm text-gray-400 line-through">{formatCurrency(selectedService.price)}</p>
+                                    <p className="text-2xl font-black text-orange-600">{formatCurrency(selectedService.promo_price)}</p>
+                                </>
+                            ) : (
+                                <p className="text-2xl font-black text-[#2e7d32]">
+                                    {formatCurrency(selectedService?.price || 0)}
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -85,7 +93,7 @@ export function BookingConfirmation({
                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tarikh</span>
                             </div>
                             <p className="font-bold text-gray-800 ml-11">
-                                {selectedDate ? format(selectedDate, 'EEEE, dd MMM yyyy') : '-'}
+                                {selectedDate ? format(selectedDate, 'EEEE, dd MMM yyyy', { locale: ms }) : '-'}
                             </p>
                         </div>
 
@@ -159,9 +167,20 @@ export function BookingConfirmation({
                     <div className="mt-2 pt-6 border-t border-gray-100 flex items-center justify-between">
                         <span className="text-gray-400 font-extrabold text-sm uppercase tracking-widest">Jumlah Anggaran</span>
                         <div className="text-right">
-                            <span className="text-4xl font-black text-[#2e7d32] tracking-tighter">
-                                {formatCurrency(selectedService?.price || 0)}
-                            </span>
+                            {selectedService?.promo_active && selectedService?.promo_price != null ? (
+                                <div>
+                                    <span className="text-lg text-gray-400 line-through mr-2">
+                                        {formatCurrency(selectedService.price)}
+                                    </span>
+                                    <span className="text-4xl font-black text-orange-600 tracking-tighter">
+                                        {formatCurrency(selectedService.promo_price)}
+                                    </span>
+                                </div>
+                            ) : (
+                                <span className="text-4xl font-black text-[#2e7d32] tracking-tighter">
+                                    {formatCurrency(selectedService?.price || 0)}
+                                </span>
+                            )}
                         </div>
                     </div>
 

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui";
 import { format } from "date-fns";
+import { ms } from "date-fns/locale/ms";
 import { generateCalendarDays, BookingSlot } from "@/lib/utils/booking-utils";
 
 interface DateTimeSelectionProps {
@@ -38,6 +39,7 @@ export function DateTimeSelection({
             className="space-y-4"
         >
             <h2 className="text-lg font-bold text-gray-800">Pilih Tarikh & Masa</h2>
+            <p className="text-xs text-gray-400 font-medium -mt-2">Waktu Operasi: 9:00 AM - 9:00 PM (Rehat 1:00 - 2:00 PM)</p>
 
             {/* Calendar */}
             <Card className="border-none shadow-sm overflow-hidden">
@@ -50,7 +52,7 @@ export function DateTimeSelection({
                             <ChevronLeft className="h-5 w-5" />
                         </button>
                         <h3 className="font-bold text-gray-800 uppercase tracking-wider text-sm">
-                            {format(currentMonth, 'MMMM yyyy')}
+                            {format(currentMonth, 'MMMM yyyy', { locale: ms })}
                         </h3>
                         <button
                             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}

@@ -8,6 +8,9 @@ export interface Service {
     member_price?: number;
     duration?: number;
     image_url?: string;
+    promo_id?: string | null;
+    promo_price?: number | null;
+    promo_active?: boolean;
 }
 
 export interface Staff {

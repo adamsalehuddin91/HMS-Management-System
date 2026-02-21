@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
-  Scissors,
   Loader2,
   ArrowLeft,
   ArrowRight,
@@ -282,7 +281,7 @@ export default function CustomerBookingPage() {
       <header className="bg-[#2e7d32] text-white p-6 sticky top-0 z-20 shadow-lg shadow-green-900/10 backdrop-blur-md bg-[#2e7d32]/95">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/10">
-            <Scissors className="h-5 w-5 text-white" />
+            <span className="text-sm font-black text-white tracking-tighter">H</span>
           </div>
           <div className="flex-1 text-center px-4">
             <h1 className="text-xl font-black tracking-tight uppercase group cursor-default">
@@ -290,7 +289,7 @@ export default function CustomerBookingPage() {
             </h1>
             <div className="flex items-center justify-center gap-1.5 mt-0.5 opacity-80">
               <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-              <p className="text-[10px] font-bold tracking-[0.1em] uppercase">Premium Salon Booking</p>
+              <p className="text-[10px] font-bold tracking-[0.1em] uppercase">Salon Muslimah Premium</p>
             </div>
           </div>
           <div className="w-10 h-10" />

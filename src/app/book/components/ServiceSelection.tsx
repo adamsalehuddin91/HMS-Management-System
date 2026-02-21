@@ -65,7 +65,9 @@ export function ServiceSelection({
                         key={service.id}
                         className={`cursor-pointer transition-all duration-300 ${selectedService?.id === service.id
                             ? "border-2 border-[#2e7d32] bg-[#f1f8f1] scale-[1.02] shadow-md"
-                            : "border border-gray-200 hover:border-[#4caf50] hover:bg-gray-50"
+                            : service.promo_active && service.promo_price != null
+                                ? "border border-orange-200 hover:border-orange-400 hover:bg-orange-50/30 ring-1 ring-orange-100"
+                                : "border border-gray-200 hover:border-[#4caf50] hover:bg-gray-50"
                             }`}
                         onClick={() => setSelectedService(service)}
                     >
@@ -91,7 +93,22 @@ export function ServiceSelection({
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="font-bold text-[#2e7d32]">{formatCurrency(service.price)}</p>
+                                    {service.promo_active && service.promo_price != null ? (
+                                        <>
+                                            <div className="flex items-center gap-1.5 justify-end">
+                                                <span className="text-[10px] font-black text-orange-500 bg-orange-50 px-1.5 py-0.5 rounded-full border border-orange-100 animate-pulse">
+                                                    Promosi
+                                                </span>
+                                                <span className="text-[10px] font-bold text-orange-400">
+                                                    -{Math.round(((service.price - service.promo_price) / service.price) * 100)}%
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-gray-400 line-through mt-0.5">{formatCurrency(service.price)}</p>
+                                            <p className="font-bold text-orange-600">{formatCurrency(service.promo_price)}</p>
+                                        </>
+                                    ) : (
+                                        <p className="font-bold text-[#2e7d32]">{formatCurrency(service.price)}</p>
+                                    )}
                                     {selectedService?.id === service.id && (
                                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
                                             <Check className="h-5 w-5 text-[#2e7d32] ml-auto mt-1" />

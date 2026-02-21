@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, MessageCircle, MapPin } from "lucide-react";
+import { Check, MessageCircle, MapPin, Navigation, CalendarPlus } from "lucide-react";
 import { Card, CardContent, Badge, Button } from "@/components/ui";
 import { format } from "date-fns";
+import { ms } from "date-fns/locale/ms";
 import { useRouter } from "next/navigation";
 import { Service, BusinessInfo } from "@/lib/utils/booking-utils";
 
@@ -56,7 +57,7 @@ export function BookingSuccess({
                 <CardContent className="p-6 text-left space-y-4">
                     <div className="flex justify-between items-center">
                         <span className="text-sm font-bold text-gray-400">TARIKH</span>
-                        <span className="font-extrabold text-gray-800">{selectedDate ? format(selectedDate, 'dd MMM yyyy') : '-'}</span>
+                        <span className="font-extrabold text-gray-800">{selectedDate ? format(selectedDate, 'dd MMM yyyy', { locale: ms }) : '-'}</span>
                     </div>
                     <div className="flex justify-between items-center">
                         <span className="text-sm font-bold text-gray-400">MASA</span>
@@ -104,7 +105,61 @@ export function BookingSuccess({
                     </div>
                     <span>{businessInfo.address}</span>
                 </div>
-                <div className="flex items-center gap-2 text-[10px] text-[#2e7d32]/70 font-bold bg-[#2e7d32]/5 p-3 rounded-xl italic">
+                <div className="flex gap-2 mt-3">
+                    <a
+                        href={`https://waze.com/ul?q=${encodeURIComponent(businessInfo.address)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-[#33ccff]/10 text-[#0099cc] rounded-xl text-xs font-bold border border-[#33ccff]/20 hover:bg-[#33ccff]/20 transition-colors"
+                    >
+                        <Navigation className="h-3.5 w-3.5" />
+                        Buka di Waze
+                    </a>
+                    <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(businessInfo.address)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold border border-red-100 hover:bg-red-100 transition-colors"
+                    >
+                        <MapPin className="h-3.5 w-3.5" />
+                        Google Maps
+                    </a>
+                </div>
+                <button
+                    onClick={() => {
+                        if (!selectedDate || !selectedTime || !selectedService) return;
+                        const duration = selectedService.duration || 60;
+                        const [h, m] = selectedTime.split(':').map(Number);
+                        const start = new Date(selectedDate);
+                        start.setHours(h, m, 0, 0);
+                        const end = new Date(start.getTime() + duration * 60000);
+                        const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+                        const ics = [
+                            'BEGIN:VCALENDAR',
+                            'VERSION:2.0',
+                            'BEGIN:VEVENT',
+                            `DTSTART:${fmt(start)}`,
+                            `DTEND:${fmt(end)}`,
+                            `SUMMARY:${selectedService.name} - ${businessInfo.name}`,
+                            `LOCATION:${businessInfo.address}`,
+                            `DESCRIPTION:Tempahan HMS-${bookingId}`,
+                            'END:VEVENT',
+                            'END:VCALENDAR'
+                        ].join('\r\n');
+                        const blob = new Blob([ics], { type: 'text/calendar' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `tempahan-hms-${bookingId}.ics`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    }}
+                    className="w-full mt-2 flex items-center justify-center gap-2 py-3 bg-white text-[#2e7d32] rounded-xl text-xs font-bold border border-green-100 hover:bg-[#f1f8f1] transition-colors"
+                >
+                    <CalendarPlus className="h-3.5 w-3.5" />
+                    Tambah ke Kalendar
+                </button>
+                <div className="flex items-center gap-2 text-[10px] text-[#2e7d32]/70 font-bold bg-[#2e7d32]/5 p-3 rounded-xl italic mt-3">
                     <p>Sila hadir 10 minit awal sebelum waktu tempahan anda. Terima kasih!</p>
                 </div>
             </motion.div>
