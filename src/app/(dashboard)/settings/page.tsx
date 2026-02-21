@@ -32,7 +32,8 @@ interface OperatingHour { day: string; open: string; close: string; isOpen: bool
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState("business");
+  const isStaff = user?.role === "staff";
+  const [activeTab, setActiveTab] = useState(isStaff ? "display" : "business");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
@@ -85,7 +86,7 @@ export default function SettingsPage() {
     finally { setSaving(false); }
   };
 
-  const tabs = [
+  const allTabs = [
     { id: "business", label: "Profil Bisnes", icon: Building2 },
     { id: "hours", label: "Waktu Operasi", icon: Clock },
     { id: "loyalty", label: "Program Kesetiaan", icon: Gift },
@@ -94,6 +95,10 @@ export default function SettingsPage() {
     { id: "roles", label: "Peranan Pengguna", icon: Users },
     { id: "security", label: "Keselamatan", icon: Shield },
   ];
+
+  const tabs = isStaff
+    ? allTabs.filter((tab) => tab.id === "display")
+    : allTabs;
 
   return (
     <div className="min-h-screen bg-[#fcfdfd]">

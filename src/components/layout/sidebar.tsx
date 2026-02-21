@@ -30,7 +30,6 @@ const adminNavItems = [
   { href: "/staff", label: "Staff", icon: UserCog },
   { href: "/services", label: "Services", icon: Scissors },
   { href: "/inventory", label: "Inventory", icon: Package },
-  { href: "/pos", label: "POS", icon: Receipt },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/promotions", label: "Promotions", icon: Tag },
 ];
@@ -117,12 +116,14 @@ export function Sidebar({ user }: SidebarProps) {
 
         {/* Quick Actions */}
         <div className="px-3 py-4 space-y-3">
-          <Link href="/pos">
-            <Button className="w-full gap-2 shadow-lg shadow-green-900/20" size="lg">
-              <ShoppingCart className="h-5 w-5" />
-              New Sale
-            </Button>
-          </Link>
+          {user.role === "staff" && (
+            <Link href="/pos">
+              <Button className="w-full gap-2 shadow-lg shadow-green-900/20" size="lg">
+                <ShoppingCart className="h-5 w-5" />
+                New Sale
+              </Button>
+            </Link>
+          )}
           <Link href="/appointments/new">
             <Button variant="secondary" className="w-full gap-2 bg-white/50 hover:bg-white/80 border border-white/20" size="lg">
               <Plus className="h-5 w-5" />
@@ -133,20 +134,18 @@ export function Sidebar({ user }: SidebarProps) {
 
         {/* Bottom Section */}
         <div className="p-3 border-t border-[var(--border)]/50">
-          {user.role === "admin" && (
-            <Link
-              href="/settings"
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors mb-2 group",
-                pathname === "/settings"
-                  ? "bg-[var(--primary-light)] text-[var(--primary-dark)]"
-                  : "text-[var(--muted)] hover:bg-white/50 hover:text-[var(--foreground)]"
-              )}
-            >
-              <Settings className="h-5 w-5 group-hover:rotate-90 transition-transform duration-500" />
-              Settings
-            </Link>
-          )}
+          <Link
+            href="/settings"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors mb-2 group",
+              pathname === "/settings"
+                ? "bg-[var(--primary-light)] text-[var(--primary-dark)]"
+                : "text-[var(--muted)] hover:bg-white/50 hover:text-[var(--foreground)]"
+            )}
+          >
+            <Settings className="h-5 w-5 group-hover:rotate-90 transition-transform duration-500" />
+            Settings
+          </Link>
           <button
             className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-[var(--error)] hover:bg-red-50 transition-colors w-full"
             onClick={handleLogout}
