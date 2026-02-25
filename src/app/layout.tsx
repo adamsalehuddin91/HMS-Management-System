@@ -20,6 +20,14 @@ export const metadata: Metadata = {
   title: "HMS Salon - Muslimah Salon Management",
   description: "Digital salon ecosystem for Muslimah salons - POS, Booking, Loyalty, Inventory, Reports",
   keywords: ["salon management", "muslimah salon", "POS", "booking system", "loyalty points"],
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "HMS Salon",
+  },
+  icons: {
+    apple: "/icon-192x192.png",
+  },
 };
 
 export default function RootLayout({
@@ -29,6 +37,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="theme-color" content="#2e7d32" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased font-size-medium`}
       >

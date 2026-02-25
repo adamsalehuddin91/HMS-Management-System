@@ -26,7 +26,7 @@ import { RolesSettings } from "./components/RolesSettings";
 import { DisplaySettings } from "./components/DisplaySettings";
 import { SMSNotificationSettings } from "./components/SMSNotificationSettings";
 
-interface BusinessInfo { name: string; phone: string; email: string; whatsapp: string; address: string; booking_url?: string; google_review_url?: string; }
+interface BusinessInfo { name: string; phone: string; email: string; whatsapp: string; address: string; booking_url?: string; google_review_url?: string; logo_url?: string; }
 interface LoyaltySettings { pointsPerRM: number; memberMultiplier: number; pointsPerDiscount: number; maxRedemption: number; expiryMonths: number; expiryEnabled: boolean; }
 interface OperatingHour { day: string; open: string; close: string; isOpen: boolean; }
 

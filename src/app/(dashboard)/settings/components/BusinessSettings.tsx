@@ -1,7 +1,10 @@
 "use client";
 
-import { Check, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Check, Loader2, Upload, ImageIcon, X } from "lucide-react";
 import { Button, Card, CardContent, Input } from "@/components/ui";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 interface BusinessInfo {
     name: string;
@@ -11,6 +14,7 @@ interface BusinessInfo {
     address: string;
     booking_url?: string;
     google_review_url?: string;
+    logo_url?: string;
 }
 
 interface BusinessSettingsProps {
@@ -28,12 +32,105 @@ export function BusinessSettings({
     showSaved,
     handleSave
 }: BusinessSettingsProps) {
+    const [uploadingLogo, setUploadingLogo] = useState(false);
+
+    const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            toast.error("Sila pilih fail imej sahaja.");
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            toast.error("Saiz logo mestilah kurang dari 2MB.");
+            return;
+        }
+
+        setUploadingLogo(true);
+        try {
+            const supabase = createClient();
+            const ext = file.name.split(".").pop();
+            const filePath = `logo/salon-logo.${ext}`;
+
+            const { error: uploadError } = await supabase.storage
+                .from("salon-assets")
+                .upload(filePath, file, { upsert: true, contentType: file.type });
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from("salon-assets")
+                .getPublicUrl(filePath);
+
+            setBusinessInfo({ ...businessInfo, logo_url: publicUrl });
+            toast.success("Logo berjaya dimuat naik! Klik Simpan untuk menyimpan.");
+        } catch {
+            toast.error("Gagal muat naik logo. Cuba lagi.");
+        } finally {
+            setUploadingLogo(false);
+            e.target.value = "";
+        }
+    };
+
     return (
         <div className="space-y-10">
             <div>
                 <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2e7d32]">Profil Kedai</h3>
                 <p className="text-3xl font-black text-gray-900 tracking-tighter mt-1">Maklumat Perniagaan</p>
                 <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mt-3">Kemaskini butiran salon anda untuk dipaparkan pada resit dan sistem</p>
+            </div>
+
+            {/* Logo Upload */}
+            <div className="p-6 bg-gray-50 rounded-3xl space-y-4">
+                <div>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#2e7d32]">Logo Salon</h3>
+                    <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mt-1">Dipaparkan pada resit PDF dan sistem</p>
+                </div>
+                <div className="flex items-center gap-6">
+                    <div className="h-24 w-24 rounded-2xl bg-white border border-gray-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {businessInfo.logo_url ? (
+                            <img
+                                src={businessInfo.logo_url}
+                                alt="Logo Salon"
+                                className="h-full w-full object-contain p-2"
+                            />
+                        ) : (
+                            <ImageIcon className="h-8 w-8 text-gray-300" />
+                        )}
+                    </div>
+                    <div className="space-y-2">
+                        <label
+                            className={`h-12 px-6 rounded-xl font-black text-[10px] uppercase tracking-widest cursor-pointer inline-flex items-center gap-2 transition-all select-none ${
+                                uploadingLogo
+                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                    : "bg-[#2e7d32]/10 text-[#2e7d32] hover:bg-[#2e7d32]/20"
+                            }`}
+                        >
+                            {uploadingLogo ? (
+                                <><Loader2 className="h-4 w-4 animate-spin" />Memuat naik...</>
+                            ) : (
+                                <><Upload className="h-4 w-4" />Muat Naik Logo</>
+                            )}
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleLogoUpload}
+                                disabled={uploadingLogo}
+                            />
+                        </label>
+                        <p className="text-[10px] text-gray-400 font-medium ml-1">PNG, JPG, SVG · Maks 2MB</p>
+                        {businessInfo.logo_url && (
+                            <button
+                                onClick={() => setBusinessInfo({ ...businessInfo, logo_url: undefined })}
+                                className="text-[10px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest ml-1 flex items-center gap-1 transition-colors"
+                            >
+                                <X className="h-3 w-3" /> Padam Logo
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
