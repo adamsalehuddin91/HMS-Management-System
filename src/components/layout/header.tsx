@@ -34,8 +34,8 @@ export function Header({ title, subtitle, action, user }: HeaderProps) {
         </div>
       </div>
 
-      {/* Center: Search */}
-      <div className="flex-1 max-w-md mx-8">
+      {/* Center: Search — hidden on mobile */}
+      <div className="hidden md:flex flex-1 max-w-md mx-8">
         <Input
           placeholder="Search data..."
           icon={<Search className="h-4 w-4" />}
@@ -44,14 +44,14 @@ export function Header({ title, subtitle, action, user }: HeaderProps) {
       </div>
 
       {/* Right: Actions & User */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         {action}
         <button className="relative p-2 rounded-full hover:bg-[var(--secondary)] transition-colors">
           <Bell className="h-5 w-5 text-[var(--muted)]" />
           <span className="absolute top-1 right-1 h-2 w-2 bg-[var(--error)] rounded-full" />
         </button>
         <div className="flex items-center gap-3">
-          <div className="text-right">
+          <div className="text-right hidden md:block">
             <p className="text-sm font-medium">{user.name}</p>
             <p className="text-xs text-[var(--muted)] capitalize">{user.role}</p>
           </div>

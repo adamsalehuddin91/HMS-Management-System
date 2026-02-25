@@ -250,7 +250,7 @@ export default function StaffPage() {
     <div className="min-h-screen bg-[#fcfdfd]">
       <Header title="Pasukan & Prestasi" subtitle="Pantau dan urus pasukan pakar anda" user={user!} />
 
-      <div className="p-8 space-y-8 max-w-[1600px] mx-auto">
+      <div className="p-4 md:p-8 space-y-8 max-w-[1600px] mx-auto">
         <StaffStatsHeader
           totalStaff={totalStaff}
           activeStaff={activeStaff}

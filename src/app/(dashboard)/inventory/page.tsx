@@ -152,7 +152,7 @@ export default function InventoryPage() {
     <div className="min-h-screen bg-[#fcfdfd]">
       <Header title="Inventori & Bekalan" subtitle="Pantau dan urus stok produk salon anda" user={user!} />
 
-      <div className="p-8 space-y-8 max-w-[1600px] mx-auto">
+      <div className="p-4 md:p-8 space-y-8 max-w-[1600px] mx-auto">
         <InventoryStatsHeader totalProducts={totalProducts} lowStockItems={lowStockItems} inventoryValue={inventoryValue} />
 
         <div className="flex items-center gap-4 border-b border-gray-100 overflow-x-auto no-scrollbar">

@@ -63,7 +63,7 @@ export default function PromotionsPage() {
 
     return (
         <div className="min-h-screen bg-[#fcfdfd]">
-            <div className="p-8 max-w-[1200px] mx-auto space-y-8">
+            <div className="p-4 md:p-8 max-w-[1200px] mx-auto space-y-8">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>

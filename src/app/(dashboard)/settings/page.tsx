@@ -104,12 +104,12 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-[#fcfdfd]">
       <Header title="Konfigurasi Sistem" subtitle="Urus tetapan salon dan peraturan perniagaan anda" user={user!} />
 
-      <div className="p-8 max-w-[1600px] mx-auto">
+      <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
         <div className="flex flex-col xl:flex-row gap-8">
           <SettingsSidebar tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
 
           <Card className="flex-1 border-none shadow-xl bg-white rounded-[2.5rem] overflow-hidden">
-            <CardContent className="p-10 lg:p-14">
+            <CardContent className="p-6 md:p-10 lg:p-14">
               {loading ? (
                 <div className="flex flex-col items-center justify-center h-96 gap-4 text-gray-400">
                   <Loader2 className="h-10 w-10 animate-spin text-[#2e7d32]/20" />

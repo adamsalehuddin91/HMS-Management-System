@@ -558,7 +558,7 @@ export default function ReportsPage() {
         user={user!}
       />
 
-      <div className="p-8 max-w-[1600px] mx-auto">
+      <div className="p-4 md:p-8 max-w-[1600px] mx-auto">
 
         {/* ── ADMIN VIEW ──────────────────────────────────────────────────── */}
         {isAdmin && (

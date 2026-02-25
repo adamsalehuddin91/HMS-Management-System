@@ -252,7 +252,7 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50/50">
       <Header title="Ringkasan Dashboard" user={user!} />
 
-      <div className="p-8 space-y-8 max-w-[1600px] mx-auto">
+      <div className="p-4 md:p-8 space-y-8 max-w-[1600px] mx-auto">
         <StatCardsHeader
           loading={loading}
           stats={stats}
