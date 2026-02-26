@@ -8,20 +8,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { checkSession, setUser, setLoading } = useAuthStore();
 
     useEffect(() => {
-        // Initial session load — fetches role from public.users (correct)
+        // On mount: fetch user + role from public.users
         checkSession();
 
         const supabase = createClient();
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === "INITIAL_SESSION") {
+                // Already handled by checkSession() above — skip to avoid race condition
+                return;
+            }
+
             if (event === "TOKEN_REFRESHED") {
-                // Silent token refresh — do NOT touch user state, role stays correct
+                // Silent token refresh — role unchanged, do NOT touch user state
                 return;
             }
 
             if (session?.user) {
-                // SIGNED_IN / INITIAL_SESSION: reuse checkSession which reads role from public.users
+                // SIGNED_IN: user just logged in — fetch correct role from public.users
                 await checkSession();
             } else {
                 // SIGNED_OUT
