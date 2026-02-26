@@ -11,7 +11,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Wait for hydration
@@ -21,13 +21,13 @@ export default function DashboardLayout({
 
   // Client-side fallback guard
   useEffect(() => {
-    if (isHydrated && !isLoading && !isAuthenticated) {
+    if (isHydrated && !isAuthenticated) {
       router.replace("/login");
     }
-  }, [isHydrated, isLoading, isAuthenticated, router]);
+  }, [isHydrated, isAuthenticated, router]);
 
-  // Show loading during initial hydration or auth check
-  if (!isHydrated || isLoading) {
+  // Show loading only during the initial JS hydration frame
+  if (!isHydrated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin h-8 w-8 border-4 border-[var(--primary)] border-t-transparent rounded-full" />

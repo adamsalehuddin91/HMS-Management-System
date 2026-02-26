@@ -1,20 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AnimationProvider } from "@/components/providers/animation-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { FontSizeManager } from "@/components/providers/font-size-manager";
 import { Toaster } from "@/components/ui/toaster";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "HMS Salon - Muslimah Salon Management",
@@ -45,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased font-size-medium`}
+        className="antialiased font-size-medium"
       >
         <AuthProvider>
           <FontSizeManager />

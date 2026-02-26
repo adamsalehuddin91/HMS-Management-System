@@ -25,7 +25,11 @@ export const useAuthStore = create<AuthState>()(
       checkSession: async () => {
         try {
           const supabase = createClient();
-          const { data: { session } } = await supabase.auth.getSession();
+          const sessionPromise = supabase.auth.getSession();
+          const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('checkSession timeout')), 8000)
+          );
+          const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
 
           if (session?.user) {
             // Fetch profile from public.users
@@ -59,8 +63,13 @@ export const useAuthStore = create<AuthState>()(
             set({ user: null, isAuthenticated: false, isLoading: false });
           }
         } catch (error) {
-          logError('Auth Store', error);
-          set({ user: null, isAuthenticated: false, isLoading: false });
+          if ((error as Error).message === 'checkSession timeout') {
+            // Network slow — keep existing auth state, just unblock loading
+            set({ isLoading: false });
+          } else {
+            logError('Auth Store', error);
+            set({ user: null, isAuthenticated: false, isLoading: false });
+          }
         }
       },
       logout: async () => {

@@ -63,7 +63,7 @@
   --color-warning: var(--warning);
   --color-error: var(--error);
   --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
+  --font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
   --shadow-card: var(--shadow);
 }
 

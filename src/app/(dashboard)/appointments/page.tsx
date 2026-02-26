@@ -43,6 +43,7 @@ export default function AppointmentsPage() {
 
   // Fetch bookings
   useEffect(() => {
+    const abortController = new AbortController();
     const fetchBookings = async () => {
       setLoading(true);
       const supabase = createClient();
@@ -50,31 +51,38 @@ export default function AppointmentsPage() {
       const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
 
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-                    *,
-                    customer:customers(id, name, phone, is_member, tier),
-                    service:services(id, name, price, duration),
-                    staff:staff(id, name)
-                `)
-        .gte('booking_date', firstDay.toISOString().split('T')[0])
-        .lte('booking_date', lastDay.toISOString().split('T')[0])
-        .order('booking_date', { ascending: true })
-        .order('start_time', { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from('bookings')
+          .select(`
+                      *,
+                      customer:customers(id, name, phone, is_member, tier),
+                      service:services(id, name, price, duration),
+                      staff:staff(id, name)
+                  `)
+          .gte('booking_date', firstDay.toISOString().split('T')[0])
+          .lte('booking_date', lastDay.toISOString().split('T')[0])
+          .order('booking_date', { ascending: true })
+          .order('start_time', { ascending: true })
+          .abortSignal(abortController.signal);
 
-      if (error) {
-        logError('Appointments Page', error);
-      } else if (data) {
-        setBookings(data);
-        if (data.length > 0 && !selectedBooking) {
-          setSelectedBooking(data[0]);
+        if (error) {
+          logError('Appointments Page', error);
+        } else if (data) {
+          setBookings(data);
+          if (data.length > 0 && !selectedBooking) {
+            setSelectedBooking(data[0]);
+          }
         }
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') logError('Appointments Page', err);
+      } finally {
+        if (!abortController.signal.aborted) setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchBookings();
+    return () => abortController.abort();
   }, [currentMonth]);
 
   // Calendar generation logic

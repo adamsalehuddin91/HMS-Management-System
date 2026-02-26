@@ -63,6 +63,7 @@ export default function StaffPage() {
 
   // ── Fetch staff + month metrics ───────────────────────────────────────────
   useEffect(() => {
+    const abortController = new AbortController();
     const fetchStaff = async () => {
       setLoading(true);
       const supabase = createClient();
@@ -124,10 +125,11 @@ export default function StaffPage() {
       } else if (mappedStaff.length > 0) {
         setSelectedStaff(mappedStaff[0]);
       }
-      setLoading(false);
+      if (!abortController.signal.aborted) setLoading(false);
     };
 
     fetchStaff();
+    return () => abortController.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMonth]);
 

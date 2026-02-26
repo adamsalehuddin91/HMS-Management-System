@@ -52,23 +52,28 @@ export default function InventoryPage() {
   const isAdmin = user?.role === "admin";
 
   useEffect(() => {
+    const abortController = new AbortController();
     const fetchProducts = async () => {
       setLoading(true);
       try {
         const data = await inventoryService.getProducts();
-        setProducts(data.map((p: any) => {
-          let status: 'in_stock' | 'low_stock' | 'out_of_stock' = 'in_stock';
-          const threshold = p.low_stock_threshold || 5;
-          if (p.stock_quantity === 0) status = 'out_of_stock';
-          else if (p.stock_quantity <= threshold) status = 'low_stock';
-          return { ...p, stockLevel: p.stock_quantity, status, price: p.sell_price, image: p.image_url || getProductImage(p.category) };
-        }));
+        if (!abortController.signal.aborted) {
+          setProducts(data.map((p: any) => {
+            let status: 'in_stock' | 'low_stock' | 'out_of_stock' = 'in_stock';
+            const threshold = p.low_stock_threshold || 5;
+            if (p.stock_quantity === 0) status = 'out_of_stock';
+            else if (p.stock_quantity <= threshold) status = 'low_stock';
+            return { ...p, stockLevel: p.stock_quantity, status, price: p.sell_price, image: p.image_url || getProductImage(p.category) };
+          }));
+        }
       } catch (error) {
-        toast.error("Gagal memuatkan produk.");
+        if ((error as Error).name !== 'AbortError') toast.error("Gagal memuatkan produk.");
+      } finally {
+        if (!abortController.signal.aborted) setLoading(false);
       }
-      setLoading(false);
     };
     fetchProducts();
+    return () => abortController.abort();
   }, []);
 
   const totalProducts = products.length;

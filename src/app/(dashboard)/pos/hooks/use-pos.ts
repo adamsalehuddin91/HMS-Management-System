@@ -60,6 +60,7 @@ export function usePOS(bookingId: string | null, user: User | null) {
 
     // ── Initial data fetch ────────────────────────────────────────────────────
     useEffect(() => {
+        const abortController = new AbortController();
         const fetchData = async () => {
             setLoading(true);
             try {
@@ -178,14 +179,17 @@ export function usePOS(bookingId: string | null, user: User | null) {
                     }
                 }
             } catch (error) {
-                logError('POS Hook - Fetch', error);
-                toast.error("Gagal memuatkan data POS.");
+                if ((error as Error).name !== 'AbortError') {
+                    logError('POS Hook - Fetch', error);
+                    toast.error("Gagal memuatkan data POS.");
+                }
             } finally {
-                setLoading(false);
+                if (!abortController.signal.aborted) setLoading(false);
             }
         };
 
         fetchData();
+        return () => abortController.abort();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [bookingId]);
 

@@ -51,20 +51,27 @@ export default function SettingsPage() {
   ]);
 
   useEffect(() => {
+    const abortController = new AbortController();
     const fetchSettings = async () => {
       setLoading(true);
       const supabase = createClient();
-      const { data, error } = await supabase.from('business_settings').select('*');
-      if (!error && data) {
-        data.forEach(setting => {
-          if (setting.setting_key === 'business_info') setBusinessInfo(setting.setting_value as BusinessInfo);
-          else if (setting.setting_key === 'loyalty_settings') setLoyaltySettings(setting.setting_value as LoyaltySettings);
-          else if (setting.setting_key === 'operating_hours') setOperatingHours(setting.setting_value as OperatingHour[]);
-        });
+      try {
+        const { data, error } = await supabase.from('business_settings').select('*').abortSignal(abortController.signal);
+        if (!error && data && !abortController.signal.aborted) {
+          data.forEach(setting => {
+            if (setting.setting_key === 'business_info') setBusinessInfo(setting.setting_value as BusinessInfo);
+            else if (setting.setting_key === 'loyalty_settings') setLoyaltySettings(setting.setting_value as LoyaltySettings);
+            else if (setting.setting_key === 'operating_hours') setOperatingHours(setting.setting_value as OperatingHour[]);
+          });
+        }
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') toast.error("Gagal memuatkan tetapan.");
+      } finally {
+        if (!abortController.signal.aborted) setLoading(false);
       }
-      setLoading(false);
     };
     fetchSettings();
+    return () => abortController.abort();
   }, []);
 
   const handleSave = async () => {

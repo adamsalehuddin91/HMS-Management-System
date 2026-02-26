@@ -63,6 +63,7 @@ export default function DashboardPage() {
   const [upcomingAppointments, setUpcomingAppointments] = useState<UpcomingAppointment[]>([]);
 
   useEffect(() => {
+    const abortController = new AbortController();
     const fetchDashboardData = async () => {
       setLoading(true);
       const supabase = createClient();
@@ -231,13 +232,16 @@ export default function DashboardPage() {
         }
 
       } catch (error) {
-        logError('Dashboard Page', error);
+        if ((error as Error).name !== 'AbortError') {
+          logError('Dashboard Page', error);
+        }
       } finally {
-        setLoading(false);
+        if (!abortController.signal.aborted) setLoading(false);
       }
     };
 
     fetchDashboardData();
+    return () => abortController.abort();
   }, [user]);
 
   const maxValue = Math.max(...weeklyData.map((d) => d.value), 1);

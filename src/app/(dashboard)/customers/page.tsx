@@ -57,36 +57,46 @@ export default function CustomersPage() {
   };
 
   useEffect(() => {
+    const abortController = new AbortController();
     const fetchCustomers = async () => {
       setLoading(true);
       const supabase = createClient();
       const allData: Customer[] = [];
       let offset = 0;
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
-        const { data, error } = await supabase
-          .from('customers')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .range(offset, offset + 999);
+      try {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          if (abortController.signal.aborted) break;
+          const { data, error } = await supabase
+            .from('customers')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .range(offset, offset + 999)
+            .abortSignal(abortController.signal);
 
-        if (error) {
-          logError('Customers Page', error);
-          break;
+          if (error) {
+            logError('Customers Page', error);
+            break;
+          }
+          if (!data || data.length === 0) break;
+          allData.push(...(data as Customer[]));
+          if (data.length < 1000) break;
+          offset += 1000;
         }
-        if (!data || data.length === 0) break;
-        allData.push(...(data as Customer[]));
-        if (data.length < 1000) break;
-        offset += 1000;
+        if (!abortController.signal.aborted) {
+          setCustomers(allData);
+          if (allData.length > 0 && !selectedCustomer) {
+            setSelectedCustomer(allData[0]);
+          }
+        }
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') logError('Customers Page', err);
+      } finally {
+        if (!abortController.signal.aborted) setLoading(false);
       }
-
-      setCustomers(allData);
-      if (allData.length > 0 && !selectedCustomer) {
-        setSelectedCustomer(allData[0]);
-      }
-      setLoading(false);
     };
     fetchCustomers();
+    return () => abortController.abort();
   }, []);
 
   useEffect(() => {

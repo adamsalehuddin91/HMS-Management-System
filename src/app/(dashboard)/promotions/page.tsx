@@ -24,26 +24,30 @@ export default function PromotionsPage() {
     const today = new Date().toISOString().split("T")[0];
 
     useEffect(() => {
+        const abortController = new AbortController();
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                const { data: promos } = await supabase
+                    .from("promotions")
+                    .select("*, service:services(id, name, price, category)")
+                    .order("is_active", { ascending: false })
+                    .order("created_at", { ascending: false })
+                    .abortSignal(abortController.signal);
+
+                if (promos && !abortController.signal.aborted) setPromotions(promos);
+            } catch (err) {
+                if ((err as Error).name !== 'AbortError') {
+                    logError("Promotions Page", err);
+                    toast.error("Gagal muatkan data promosi.");
+                }
+            } finally {
+                if (!abortController.signal.aborted) setLoading(false);
+            }
+        };
         fetchData();
+        return () => abortController.abort();
     }, []);
-
-    const fetchData = async () => {
-        setLoading(true);
-        try {
-            const { data: promos } = await supabase
-                .from("promotions")
-                .select("*, service:services(id, name, price, category)")
-                .order("is_active", { ascending: false })
-                .order("created_at", { ascending: false });
-
-            if (promos) setPromotions(promos);
-        } catch (err) {
-            logError("Promotions Page", err);
-            toast.error("Gagal muatkan data promosi.");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const getStatus = (promo: Promotion): "aktif" | "akan_datang" | "tamat" | "tidak_aktif" => {
         if (!promo.is_active) return "tidak_aktif";

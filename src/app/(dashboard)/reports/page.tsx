@@ -134,7 +134,7 @@ export default function ReportsPage() {
   // ── Staff performance fetch ───────────────────────────────────────────────
   useEffect(() => {
     if (isAdmin || !staffMemberId) return;
-
+    const abortController = new AbortController();
     const fetchStaffData = async () => {
       setLoading(true);
       const supabase = createClient();
@@ -194,19 +194,20 @@ export default function ReportsPage() {
           );
         }
       } catch (err) {
-        logError("Staff Reports", err);
+        if ((err as Error).name !== 'AbortError') logError("Staff Reports", err);
       } finally {
-        setLoading(false);
+        if (!abortController.signal.aborted) setLoading(false);
       }
     };
 
     fetchStaffData();
+    return () => abortController.abort();
   }, [isAdmin, staffMemberId, selectedMonth]);
 
   // ── Admin data fetch ──────────────────────────────────────────────────────
   useEffect(() => {
     if (!isAdmin) return;
-
+    const abortController = new AbortController();
     const fetchReportData = async () => {
       setLoading(true);
       const supabase = createClient();
@@ -404,13 +405,14 @@ export default function ReportsPage() {
         setActiveStaffCount(staffCount || 0);
 
       } catch (error) {
-        logError("Reports Page", error);
+        if ((error as Error).name !== 'AbortError') logError("Reports Page", error);
       } finally {
-        setLoading(false);
+        if (!abortController.signal.aborted) setLoading(false);
       }
     };
 
     fetchReportData();
+    return () => abortController.abort();
   }, [isAdmin, selectedMonth, authResolved]);
 
   // ── Yearly sales trend fetch (fires when year changes) ────────────────────
