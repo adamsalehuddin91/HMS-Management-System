@@ -7,7 +7,7 @@ import { Card, CardContent, Badge } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { format } from "date-fns";
-import { downloadReceipt, generateReceipt, generateWhatsAppReceipt, ReceiptData, ReceiptItem } from "@/lib/utils/receipt-generator";
+import { downloadReceipt, generateWhatsAppReceipt, ReceiptData, ReceiptItem } from "@/lib/utils/receipt-generator";
 
 interface RecentSale {
     id: string;
@@ -151,22 +151,19 @@ export function RecentReceipts({ isOpen, onClose }: RecentReceiptsProps) {
             } else {
                 const plainMessage = generateWhatsAppReceipt(data);
                 const encodedMessage = encodeURIComponent(plainMessage);
-                const doc = await generateReceipt(data);
-                const pdfBlob = doc.output("blob");
-                const file = new File([pdfBlob], `resit-${data.receiptNo}.pdf`, { type: "application/pdf" });
-
-                // @ts-ignore
-                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: `Resit ${data.receiptNo}`, text: plainMessage });
-                } else {
-                    await downloadReceipt(data);
-                    let phone = "";
-                    if (data.customerPhone) {
-                        const raw = data.customerPhone.replace(/\D/g, "");
-                        phone = raw.startsWith("1") ? "60" + raw : raw.startsWith("01") ? "6" + raw : raw;
-                    }
-                    window.open(`https://wa.me/${phone}?text=${encodedMessage}`, "_blank");
+                let phone = "";
+                if (data.customerPhone) {
+                    const raw = data.customerPhone.replace(/\D/g, "");
+                    phone = raw.startsWith("1") ? "60" + raw : raw.startsWith("01") ? "6" + raw : raw;
                 }
+
+                await downloadReceipt(data);
+
+                // Open WhatsApp Desktop directly, fallback to wa.me
+                window.location.href = `whatsapp://send?phone=${phone}&text=${encodedMessage}`;
+                setTimeout(() => window.open(`https://wa.me/${phone}?text=${encodedMessage}`, "_blank"), 1500);
+
+                toast.info("Resit dimuat turun. Tekan Send di WhatsApp untuk hantar ke pelanggan.");
             }
         } catch {
             toast.error("Gagal menjana resit.");
