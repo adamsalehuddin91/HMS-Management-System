@@ -8,7 +8,7 @@ import { Button, Card, CardContent } from "@/components/ui";
 import { formatCurrency } from "@/lib/utils";
 import { CartItem, StaffMember, getCommissionBreakdown } from "@/lib/utils/pos-calculations";
 import { useAuthStore } from "@/lib/store/auth-store";
-import { downloadReceipt, generateWhatsAppReceipt, generateReceipt, ReceiptData, ReceiptItem } from "@/lib/utils/receipt-generator";
+import { downloadReceipt, generateWhatsAppReceipt, ReceiptData, ReceiptItem } from "@/lib/utils/receipt-generator";
 import { logError } from "@/lib/utils/error-logger";
 
 interface SuccessModalProps {
@@ -131,32 +131,17 @@ export function SuccessModal({
 
         setDownloading(true);
         try {
-            // Generate PDF Blob
-            const doc = await generateReceipt(receiptData);
-            const pdfBlob = doc.output('blob');
-            const file = new File([pdfBlob], `resit-${receiptData.receiptNo}.pdf`, { type: "application/pdf" });
+            // Download PDF first
+            await downloadReceipt(receiptData);
 
-            // Check if Web Share API is supported and can share files
-            // @ts-ignore - navigator.share / canShare types might be missing in some setups
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: `Resit ${receiptData.receiptNo}`,
-                    text: plainMessage,
-                });
-            } else {
-                // Fallback: Download PDF & Open WhatsApp
-                await downloadReceipt(receiptData);
+            // Open WhatsApp with template message
+            const url = `https://wa.me/${phone}?text=${encodedMessage}`;
+            window.open(url, "_blank");
 
-                // Construct WhatsApp URL
-                const url = `https://wa.me/${phone}?text=${encodedMessage}`;
-                window.open(url, "_blank");
-
-                toast.info("Resit telah dimuat turun. Sila lampirkan PDF secara manual di WhatsApp.");
-            }
+            toast.info("Resit dimuat turun. Sila lampirkan PDF secara manual di WhatsApp.");
         } catch (error) {
             logError('Success Modal - Share', error);
-            // Fallback on error too
+            // Fallback: open WhatsApp without PDF
             const url = `https://wa.me/${phone}?text=${encodedMessage}`;
             window.open(url, "_blank");
         } finally {
