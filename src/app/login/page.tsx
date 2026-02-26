@@ -11,7 +11,7 @@ import { logError } from "@/lib/utils/error-logger";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setUser } = useAuthStore();
+  const { checkSession } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -41,20 +41,9 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        // Update store
-        const userData = {
-          id: data.user.id,
-          email: data.user.email!,
-          name: data.user.user_metadata.name || data.user.email!.split('@')[0],
-          role: (data.user.user_metadata.role as "admin" | "staff") || "staff",
-          phone: data.user.phone || "",
-          created_at: data.user.created_at,
-          updated_at: data.user.updated_at || new Date().toISOString(),
-          avatar_url: data.user.user_metadata.avatar_url
-        };
-
-        setUser(userData);
-        toast.success("Login successful! Redirecting..."); // Use toast for success
+        // Fetch role from public.users (not user_metadata which may be empty)
+        await checkSession();
+        toast.success("Login successful! Redirecting...");
         router.push("/dashboard");
       }
     } catch (err: any) {
