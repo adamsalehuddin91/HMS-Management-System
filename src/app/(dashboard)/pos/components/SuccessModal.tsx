@@ -134,14 +134,17 @@ export function SuccessModal({
             // Download PDF first
             await downloadReceipt(receiptData);
 
-            // Open WhatsApp with template message
-            const url = `https://wa.me/${phone}?text=${encodedMessage}`;
-            window.open(url, "_blank");
+            // Open WhatsApp Desktop directly (deep link), fallback to wa.me if not installed
+            const desktopUrl = `whatsapp://send?phone=${phone}&text=${encodedMessage}`;
+            const webUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
 
-            toast.info("Resit dimuat turun. Sila lampirkan PDF secara manual di WhatsApp.");
+            // Try desktop app first, fall back to web after short delay
+            window.location.href = desktopUrl;
+            setTimeout(() => window.open(webUrl, "_blank"), 1500);
+
+            toast.info("Resit dimuat turun. Tekan Send di WhatsApp untuk hantar ke pelanggan.");
         } catch (error) {
             logError('Success Modal - Share', error);
-            // Fallback: open WhatsApp without PDF
             const url = `https://wa.me/${phone}?text=${encodedMessage}`;
             window.open(url, "_blank");
         } finally {
