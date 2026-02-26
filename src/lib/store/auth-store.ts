@@ -29,21 +29,30 @@ export const useAuthStore = create<AuthState>()(
 
           if (session?.user) {
             // Fetch profile from public.users
-            const { data: profile } = await supabase
+            const { data: profile, error: profileError } = await supabase
               .from('users')
               .select('*')
               .eq('id', session.user.id)
               .single();
 
+            if (profileError) {
+              logError('Auth Store - profile fetch', profileError);
+            }
+
+            // Role priority: public.users → user_metadata → default staff
+            const role = (profile?.role as "admin" | "staff")
+              || (session.user.user_metadata?.role as "admin" | "staff")
+              || "staff";
+
             const userData: User = {
               id: session.user.id,
               email: session.user.email!,
-              name: profile?.name || session.user.user_metadata.name || session.user.email?.split('@')[0] || "User",
-              role: (profile?.role as "admin" | "staff") || "staff",
+              name: profile?.name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || "User",
+              role,
               phone: profile?.phone || session.user.phone || "",
               created_at: session.user.created_at,
               updated_at: profile?.updated_at || new Date().toISOString(),
-              avatar_url: profile?.avatar_url || session.user.user_metadata.avatar_url
+              avatar_url: profile?.avatar_url || session.user.user_metadata?.avatar_url
             };
             set({ user: userData, isAuthenticated: true, isLoading: false });
           } else {
